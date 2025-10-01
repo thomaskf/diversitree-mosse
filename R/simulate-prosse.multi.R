@@ -115,7 +115,6 @@ run.until.change.prosse.multi <- function(lineages, info, k, b, mu, lambda, char
                     if ( runif(1) < trait.p[[z]][state,state.new] ) {#transition co-occur with speciation completion
                         info[lineages.state[i],"species"] <- n.species <- n.species + 1
                     }
-            }
         }
         info$len[lineages]   <- info$len[lineages] + dt
         info$state[lineages] <- char(info$state[lineages], dt)

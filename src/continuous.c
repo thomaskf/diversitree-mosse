@@ -1,6 +1,15 @@
 #include <R.h>
 #include <Rinternals.h>
+#include <R_ext/RS.h>
+#include <R_ext/Memory.h>
 #include <Rmath.h>
+#include <stdlib.h>
+#ifndef Calloc
+#define Calloc(n,t) (t *)calloc((size_t)(n), sizeof(t))
+#endif
+#ifndef Free
+#define Free(p) free((void*)(p))
+#endif
 #include "continuous.h"
 #include "util.h"
 

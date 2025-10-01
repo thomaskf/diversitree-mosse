@@ -1,0 +1,4 @@
+./cleanup
+./configure
+R CMD build .
+R CMD INSTALL .

@@ -1,6 +1,16 @@
 #include <R.h>
 #include <Rinternals.h>
+#include <R_ext/Memory.h>
+#include <R_ext/RS.h>
+#include <Rmath.h>
 #include "util-splines.h"
+#include <stdlib.h>
+#ifndef Calloc
+# define Calloc(n,t)   (t *)calloc((size_t)(n), sizeof(t))
+#endif
+#ifndef Free
+# define Free(p)       free((void*)(p))
+#endif
 
 /* This is adapted directly from the R sources:
    
