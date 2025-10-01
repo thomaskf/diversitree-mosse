@@ -19,3 +19,15 @@ __pycache__/
 
 # Ignore all .env files
 *.env
+
+# Ignore all .o files
+*.o
+
+# Ignore more files
+*.swp
+config.status
+*.gz
+run.sh
+src/config.h
+src/diversitree.so
+src/Makevars
