@@ -99,6 +99,17 @@ initial.tip.mosse <- function(cache, control, x) {
   nx <- control$nx * control$r
   npad <- nx - length(x)
   n <- control$ntypes
+  
+  message("n = ", n)
+  message("nx = ", nx)
+  message("npad = ", npad)
+  message("x's length = ", length(x))
+  message("x = ", capture.output(str(x)))
+  message("cache$types = ", capture.output(cache$types))
+  message("cache$states = ", capture.output(cache$states))
+  message("cache$states.sd = ", capture.output(cache$states.sd))
+  message("n = ", n)
+  
   init <- function(type, mean, sd, n) {
   	out <- rep(0, nx*(n+1))
   	out[nx*type+1:nx] <- c(dnorm(x, mean, sd), rep(0, npad))
@@ -106,6 +117,10 @@ initial.tip.mosse <- function(cache, control, x) {
   }
   y <- mapply(init, cache$types, cache$states, cache$states.sd, n, SIMPLIFY=FALSE)
   dt.tips.ordered(y, cache$tips, cache$len[cache$tips])
+  message("y$A's length: ", capture.output(length(y$A)))
+  message("y$B's length: ", capture.output(length(y$B)))
+  message("y$A[4097:4107]: ", capture.output(y$A[4097:4107]))
+  message("y$B[8197:8207]: ", capture.output(y$B[8197:8207]))
 }
 
 make.initial.conditions.mosse <- function(control) {
@@ -278,7 +293,7 @@ mosse.extent <- function(control, drift, diffusion) {
 ##check control
 check.control.mosse <- function(control, tree, states) {
   tree.length <- max(branching.times(tree))
-  defaults <- list(tc=tree.length/10,
+  defaults <- list(tc=0.5,  #tree.length/10,
   				   dt.max=0.01,
                    nx=1024,
                    dx=10^(-(control$xmax+3)),
@@ -296,8 +311,8 @@ check.control.mosse <- function(control, tree, states) {
   ## Eventually, this will contain "mol"
   method <- match.arg(control$method, c("fftC", "fftR"))
 
-  if ( control$tc <= 0 || control$tc >= tree.length )
-    stop(sprintf("tc must lie in (0, %2.2f)", tree.length))
+  # if ( control$tc <= 0 || control$tc >= tree.length )
+  #  stop(sprintf("tc must lie in (0, %2.2f)", tree.length))
   if ( log2(control$nx) %% 1 != 0 )
     stop("nx must be a power of two")
   if ( log2(control$r) %% 1 != 0 )
