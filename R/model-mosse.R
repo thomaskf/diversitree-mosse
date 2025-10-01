@@ -111,16 +111,26 @@ initial.tip.mosse <- function(cache, control, x) {
   message("n = ", n)
   
   init <- function(type, mean, sd, n) {
-  	out <- rep(0, nx*(n+1))
-  	out[nx*type+1:nx] <- c(dnorm(x, mean, sd), rep(0, npad))
-  	out
+    xlen <- length(x)
+    if (xlen < 2) stop("x must have at least 2 points")
+    out <- rep(0, nx * (n + 1))
+    # extend x by one step so we have xlen+1 breakpoints -> xlen intervals
+    dx_last <- x[xlen] - x[xlen - 1]
+    x_ext <- c(x, x[xlen] + dx_last)
+    # probability for each [x[i], x[i+1]) interval
+    probs <- diff(pnorm(x_ext, mean, sd))  # length xlen
+    out[nx*type+1:nx] <- c(probs, rep(0, npad))
+    out
   }
-  y <- mapply(init, cache$types, cache$states, cache$states.sd, n, SIMPLIFY=FALSE)
+
+    y <- mapply(init, cache$types, cache$states, cache$states.sd, n, SIMPLIFY=FALSE)
   dt.tips.ordered(y, cache$tips, cache$len[cache$tips])
-  message("y$A's length: ", capture.output(length(y$A)))
-  message("y$B's length: ", capture.output(length(y$B)))
-  message("y$A[4097:4107]: ", capture.output(y$A[4097:4107]))
-  message("y$B[8197:8207]: ", capture.output(y$B[8197:8207]))
+  # message("y$A's length: ", capture.output(length(y$A)))
+  # message("y$B's length: ", capture.output(length(y$B)))
+  # message("y$A[4097:4107]: ", capture.output(y$A[4097:4107]))
+  # message("y$A[6264:6265]: ", capture.output(y$A[6264:6265]))
+  # message("y$B[8197:8207]: ", capture.output(y$B[8197:8207]))
+  # message("y$B[9860:9861]: ", capture.output(y$B[9860:9861]))
 }
 
 make.initial.conditions.mosse <- function(control) {
