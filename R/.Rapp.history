@@ -1,0 +1,487 @@
+rbind(tmp2,tmp)
+i=3
+a <- h/prod(k[1:(i-1)])#
+    	idx <- cbind(rep((1:a), each=k[i]-1), rep(unlist(lapply(1:k[i], function(j) (1:k[i])[-j])), a/k[i]) + rep(seq(0,a-k[i],k[i]),each=k[i]*(k[i]-1)))#
+    	tmp <- idx#
+    	for (j in 1:(max(idx)-1)) {#
+    		tmp[idx==(j+1)] <- tmp[idx==(j+1)] + j*(prod(k[1:(i-1)])-1)#
+    	}#
+    	b <- prod(k[1:(i-1)])-1#
+    	idx <- cbind(rep(tmp[,1],b+1)+rep(0:b,each=dim(tmp)[1]),rep(tmp[,2],b+1)+rep(0:b,each=dim(tmp)[1]))#
+    	q.m[idx] <- rep(q[sum((k*(k-1))[i-1]) + (1:(k[i]*(k[i]-1)))], h/k[i])
+tmp2 <- as.matrix(cbind(c(0,0,0),c(0,0,0),c(0,0,0),t(pars$nam)))
+tmp <- as.matrix(cbind(pars$nam,q.m))
+rbind(tmp2,tmp)
+q[sum((k*(k-1))[i-1]) + (1:(k[i]*(k[i]-1)))]
+q
+sum((k*(k-1))[i-1])
+(k*(k-1))[i-1]
+q[sum((k*(k-1))[1:(i-1)]) + (1:(k[i]*(k[i]-1)))]
+pars$nam <- expand.grid(lapply(k,function (i) 1:i))#
+    q.m <- diag(dim(pars$nam)[1])#
+    idx <- cbind(rep((1:h), each=k[1]-1), rep(unlist(lapply(1:k[1], function(i) (1:k[1])[-i])), h/k[1]) + rep(seq(0,h-k[1],k[1]),each=k[1]*(k[1]-1)))#
+    q.m[idx] <- rep(q[1:(k[1]*(k[1]-1))], h/k[1])#
+    for (i in 2:length(k)) {#
+    	a <- h/prod(k[1:(i-1)])#
+    	idx <- cbind(rep((1:a), each=k[i]-1), rep(unlist(lapply(1:k[i], function(j) (1:k[i])[-j])), a/k[i]) + rep(seq(0,a-k[i],k[i]),each=k[i]*(k[i]-1)))#
+    	tmp <- idx#
+    	for (j in 1:(max(idx)-1)) {#
+    		tmp[idx==(j+1)] <- tmp[idx==(j+1)] + j*(prod(k[1:(i-1)])-1)#
+    	}#
+    	b <- prod(k[1:(i-1)])-1#
+    	idx <- cbind(rep(tmp[,1],b+1)+rep(0:b,each=dim(tmp)[1]),rep(tmp[,2],b+1)+rep(0:b,each=dim(tmp)[1]))#
+    	q.m[idx] <- rep(q[sum((k*(k-1))[1:(i-1)]) + (1:(k[i]*(k[i]-1)))], h/k[i])#
+    }
+tmp2 <- as.matrix(cbind(c(0,0,0),c(0,0,0),c(0,0,0),t(pars$nam)))
+tmp <- as.matrix(cbind(pars$nam,q.m))
+rbind(tmp2,tmp)
+diag(q.m[idx]) <- 0#
+    diag(q.m[idx]) <- -rowSums(q.m)
+load("/Volumes/NO NAME2/projects/engongolus/species delimination/test")
+tree$species
+tree$tip.label
+names(tree$species)<-tree$tip.label
+tree$species
+tree$species[c(1,3)] <- NA
+names(which(is.na(tree$species)))
+tree$tip.label[c(1,3)]
+traits
+tree$species[tree$tip.label]
+args
+ls()
+lik
+argnames
+tree$species[tree$tip.label[c(1,3)]]
+stats::coef(tree$species)
+?stats::coef
+species.name <- unique(tree$species)
+species.name
+tree <- trees[[1]]#
+tree <- drop.tip(tree,tip=c("Carlia_bicarinata","Carlia_schlegeli"))#
+tree$species <- tree$species[-c(which(tree$species=="Carlia_bicarinata"),which(tree$species=="Carlia_schlegeli"))]#
+unknown.tip <- c("Carlia_cf_sexdentata_te","Carlia_cf_decora","Carlia_cf_dogare","Carlia_crypta")#
+names(tree$species) <- tree$tip.label#
+tree$species[unknown.tip] <- tree$tip.label[unknown.tip]#
+n.species.max <- length(unique(tree$species))#
+species.name <- c(1:n.species.max)#
+names(species.name) <- unique(tree$species))#
+species <- species.name[tree$species]
+library(ape)
+tree <- trees[[1]]#
+tree <- drop.tip(tree,tip=c("Carlia_bicarinata","Carlia_schlegeli"))#
+tree$species <- tree$species[-c(which(tree$species=="Carlia_bicarinata"),which(tree$species=="Carlia_schlegeli"))]#
+unknown.tip <- c("Carlia_cf_sexdentata_te","Carlia_cf_decora","Carlia_cf_dogare","Carlia_crypta")#
+names(tree$species) <- tree$tip.label#
+tree$species[unknown.tip] <- tree$tip.label[unknown.tip]#
+n.species.max <- length(unique(tree$species))#
+species.name <- c(1:n.species.max)#
+names(species.name) <- unique(tree$species))#
+species <- species.name[tree$species]
+names(species.name) <- unique(tree$species)#
+species <- species.name[tree$species]
+species
+rownames(data) <- data[,1]#
+tree <- trees[[1]]#
+tree <- drop.tip(tree,tip=c("Carlia_bicarinata","Carlia_schlegeli"))#
+tree$species <- tree$species[-c(which(tree$species=="Carlia_bicarinata"),which(tree$species=="Carlia_schlegeli"))]
+tree$species
+unknown.tip <- c("Carlia_cf_sexdentata_te","Carlia_cf_decora","Carlia_cf_dogare","Carlia_crypta")#
+names(tree$species) <- tree$tip.label
+tree$species
+tree$species[unknown.tip]
+tree$species[unknown.tip] <- tree$tip.label[unknown.tip]
+tree$species
+tree <- trees[[1]]#
+tree <- drop.tip(tree,tip=c("Carlia_bicarinata","Carlia_schlegeli"))#
+tree$species <- tree$species[-c(which(tree$species=="Carlia_bicarinata"),which(tree$species=="Carlia_schlegeli"))]#
+unknown.tip <- c("Carlia_cf_sexdentata_te","Carlia_cf_decora","Carlia_cf_dogare","Carlia_crypta")#
+names(tree$species) <- tree$tip.label#
+names(tree$tip.label) <- tree$tip.label#
+tree$species[unknown.tip] <- tree$tip.label[unknown.tip]#
+n.species.max <- length(unique(tree$species))#
+species.name <- c(1:n.species.max)#
+names(species.name) <- unique(tree$species)#
+species <- species.name[tree$species]
+species
+species.name
+species[unknown.tip]
+ls(lik)
+attr(lik)
+lik$argnames
+lik@argnames
+attrs(lik)
+print(lik,detailed=T)
+environment(lik)
+lik
+is.class(lik)
+class(lik)
+class(lik)$prosse
+unique(tree$species)
+as.numeric(species[tree$species])
+tree$species
+tree$species <- as.numeric(species[tree$species])
+tree$species
+tree <- trees[[1]]#
+tree <- drop.tip(tree,tip=c("Carlia_bicarinata","Carlia_schlegeli"))#
+tree$species <- tree$species[-c(which(tree$species=="Carlia_bicarinata"),which(tree$species=="Carlia_schlegeli"))]#
+unknown.tip <- c("Carlia_cf_sexdentata_te","Carlia_cf_decora","Carlia_cf_dogare","Carlia_crypta")#
+names(tree$species) <- tree$tip.label#
+names(tree$tip.label) <- tree$tip.label#
+tree$species[unknown.tip] <- tree$tip.label[unknown.tip]#
+n.species.max <- length(unique(tree$species))#
+species.name <- c(1:n.species.max)#
+names(species.name) <- unique(tree$species)#
+species <- species.name[tree$species]
+tree$species
+species[tree$species]
+species
+tree$species
+tree <- trees[[1]]#
+tree <- drop.tip(tree,tip=c("Carlia_bicarinata","Carlia_schlegeli"))#
+tree$species <- tree$species[-c(which(tree$species=="Carlia_bicarinata"),which(tree$species=="Carlia_schlegeli"))]#
+unknown.tip <- c("Carlia_cf_sexdentata_te","Carlia_cf_decora","Carlia_cf_dogare","Carlia_crypta")#
+names(tree$species) <- tree$tip.label#
+names(tree$tip.label) <- tree$tip.label#
+tree$species[unknown.tip] <- tree$tip.label[unknown.tip]#
+n.species.max <- length(unique(tree$species))#
+species.name <- c(1:n.species.max)#
+names(species.name) <- unique(tree$species)#
+tree$species <- species[tree$species]
+tree$species
+unique(tree$species)
+unknown.tip
+species.name["Carlia_cf_sexdentata_te"]
+unique(c(tree$species,species.name["Carlia_cf_sexdentata_te"]))
+tree$species["Carlia_cf_sexdentata_te"] <- NA
+tree$species["Carlia_cf_sexdentata_te"]
+tree$species["Carlia_cf_sexdentata_te"] <- 1
+tree$species["Carlia_cf_sexdentata_te"]
+?sample
+sample
+sample.int
+sample2
+sample(c(1,3),1,prob=c(10^-6,10^-6))
+sample(c(1,3),1,prob=c(10^-6,5*10^-6))
+sample(c(1,3),1,prob=c(10^-6,5*10^-16))
+sample(c(1,3),1,prob=c(10^-17,5*10^-16))
+library(diversitree)
+?make.tree.quasse
+?simulate.quasse
+?simulate
+?simulate.tree
+?trees
+?tree.quasse
+pars <- c(.1,  .15,  .2,  # lambda 1, 2, 3#
+          .03, .045, .06, # mu 1, 2, 3#
+          .05, 0,         # q12, q13#
+          .05, .05,       # q21, q23#
+          0,   .05)       # q31, q32
+k <- (sqrt(1 + 4*length(pars))-1)/2
+k
+pars <- cbind(matrix(pars[seq_len(2*k)], k, 2), #
+                matrix(pars[(2*k+1):(k*(k+1))], k, k-1, TRUE))#
+  to <- matrix(unlist(lapply(1:k, function(i) (1:k)[-i])),#
+               k, k-1, TRUE)
+pars
+to
+stopifnot
+?stopifnot
+a <- list(pars,pars)
+a
+k <- sapply(a,function(i) dim(i))
+k
+k <- sapply(a,function(i) dim(i)[1])
+k
+trait.to <- sapply(k, function (j) matrix(unlist(lapply(1:j, function(i) (1:j)[-i])),#
+                  j, j-1, TRUE)
+)
+trait.to
+j=3
+matrix(unlist(lapply(1:j, function(i) (1:j)[-i])),#
+                  j, j-1, TRUE)
+trait.to <- lapply(k, function (j) matrix(unlist(lapply(1:j, function(i) (1:j)[-i])),#
+                  j, j-1, TRUE))
+trait.to
+argnames
+lik
+sprintf("l.%s", c(1,2))
+trait.name <- sprintf("trait.%s", 1:3)
+trait.name
+data.frame(trait.name=c(1,2,4))
+data.frame(trait.name[1]=1,trait.name[2]=2)
+data.frame(assign(trait.name[1],1))
+info <- data.frame(trait.1=1,trait.2=2)
+info
+info$trait.name[1]
+trait.name
+info[trait.name[1],]
+info[,trait.name[1]]
+data.frame(trait=c(1,2,3),x0=1)
+data.frame(trait=list(1,2,3),x0=1)
+x0=c(0,1,2,3)
+info <- data.frame(idx=1:2, len=1e-8, parent=0, state=x0, trait=list(x0[-1]), #
+                       extinct=FALSE, split=FALSE)
+info <- data.frame(idx=1, len=1e-8, parent=0, state=x0, trait=list(x0[-1]),#
+    extinct=FALSE, split=FALSE)
+x0[-1]
+info <- data.frame(idx=1, len=1e-8, parent=0, state=x0[1], trait=list(x0[-1]),#
+    extinct=FALSE, split=FALSE)
+info <- data.frame(idx=1:2, len=1e-8, parent=0, state=x0[1], trait=list(x0[-1]),#
+    extinct=FALSE, split=FALSE)
+info
+data.frame(trait=list(1,2,3),x0=1)
+data.frame(x0=1,trait=list(1,2,3),x0=1)
+data.frame(idx=1, len=1e-8, parent=0, state=x0[1], trait=list(x0[-1]))
+x0[-1]
+data.frame(trait=list(x0[-1]),idx=1, len=1e-8, parent=0, state=x0[1])
+data.frame(trait=list(x0[-1]),idx=1)
+x0
+data.frame(trait=list(c(1:k)),idx=1)
+data.frame(trait=list(1,2,3),idx=1)
+data.frame(trait=list(t(1:2)),idx=1)
+data.frame(trait=list(t(1:3)),idx=1)
+data.frame(trait=list(t(x0[-1])),idx=1)
+info <- data.frame(idx=1, len=1e-8, parent=0, state=x0, trait=list(t(x0[-1])),#
+    extinct=FALSE, split=FALSE)
+info
+x0
+info <- data.frame(idx=1, len=1e-8, parent=0, state=x0[1], trait=list(t(x0[-1])),#
+    extinct=FALSE, split=FALSE)
+info
+info <- data.frame(idx=1:2, len=1e-8, parent=0, state=x0[1], trait=list(t(x0[-1])),#
+    extinct=FALSE, split=FALSE)
+info
+sum(1 + c(0,1))
+sum(1 + 1+ c(0,1))
+table(c(1,2,3,4,6,4,2,1))
+c(1:5)*0.1 * table(c(1,2,3,4,6,4,2,1))
+sum(c(1:5)*0.1 * table(c(1,2,3,4,6,4,2,1)))
+a <- c(1,2,3,4,6,4,2,1)
+sum(a==1)
+sum(a==c(1,2,3,4,5,6))
+sapply(c(1,2,3,4,5,6), function (i) sum(a==i))
+r.n <- list(c(1,2),c(5,2))
+r.n
+sum(unlist(r.n))
+?elseif
+?else if
+sample(c(1,3),1,prob=c(10,20))
+sample(3,1)
+a
+a=1
+for (z in 1:100) {if(z>50) {a=a+1;break}}
+z
+a
+library(devtools)
+install("/Volumes/NO NAME2/diversitree-2.new")
+.Last.error.trace
+install("/Volumes/NO NAME2/diversitree-2.new")
+a <- matrix(c(0.1,2,5,6),nrow=2)
+as.vector(a)
+as.numeric(a)
+a
+a <- matrix(c(0.1,0.2,0.2,0.1),nrow=2)
+a
+as.numeric(a)
+install("/Volumes/NO NAME2/diversitree-2.new")
+library(diversitree)
+load("/Volumes/NO NAME2/projects/engongolus/species delimination/test")
+states
+control
+lambda
+lik <- make.prosse.multi(tree, traits, states, states.sd, lambda, control=control)#
+pars <- starting.point.prosse.multi(tree, lik, q.div=5, states, states.sd)
+ls()
+rm(list=ls())
+data <- read.csv("/Volumes/NO NAME2/projects/engongolus/species delimination/data.csv")#
+rownames(data) <- data[,1]#
+tree <- trees[[1]]#
+tree <- drop.tip(tree,tip=c("Carlia_bicarinata","Carlia_schlegeli"))#
+tree$species <- tree$species[-c(which(tree$species=="Carlia_bicarinata"),which(tree$species=="Carlia_schlegeli"))]#
+unknown.tip <- c("Carlia_cf_sexdentata_te","Carlia_cf_decora","Carlia_cf_dogare","Carlia_crypta")#
+names(tree$species) <- tree$tip.label#
+names(tree$tip.label) <- tree$tip.label#
+tree$species[unknown.tip] <- tree$tip.label[unknown.tip]#
+n.species.max <- length(unique(tree$species))#
+species.name <- c(1:n.species.max)#
+names(species.name) <- unique(tree$species)#
+species <- species.name[tree$species]#
+states <- data[tree$species,"state"]#
+names(states) <- tree$tip.label#
+states.sd <- data[tree$species,"state.sd"]#
+names(states.sd) <- tree$tip.label#
+traits <- data[tree$species,c(3,4)]#
+rownames(traits) <- tree$tip.label#
+lambda <- exp.x#
+control=list(method="fftC")
+library(diversitree)
+library(ape)
+data <- read.csv("/Volumes/NO NAME2/projects/engongolus/species delimination/data.csv")#
+rownames(data) <- data[,1]#
+tree <- trees[[1]]#
+tree <- drop.tip(tree,tip=c("Carlia_bicarinata","Carlia_schlegeli"))#
+tree$species <- tree$species[-c(which(tree$species=="Carlia_bicarinata"),which(tree$species=="Carlia_schlegeli"))]#
+unknown.tip <- c("Carlia_cf_sexdentata_te","Carlia_cf_decora","Carlia_cf_dogare","Carlia_crypta")#
+names(tree$species) <- tree$tip.label#
+names(tree$tip.label) <- tree$tip.label#
+tree$species[unknown.tip] <- tree$tip.label[unknown.tip]#
+n.species.max <- length(unique(tree$species))#
+species.name <- c(1:n.species.max)#
+names(species.name) <- unique(tree$species)#
+species <- species.name[tree$species]#
+states <- data[tree$species,"state"]#
+names(states) <- tree$tip.label#
+states.sd <- data[tree$species,"state.sd"]#
+names(states.sd) <- tree$tip.label#
+traits <- data[tree$species,c(3,4)]#
+rownames(traits) <- tree$tip.label#
+lambda <- exp.x#
+control=list(method="fftC")
+trees[[1]]
+rm(list=ls())
+load('/Volumes/NO NAME2/projects/engongolus/prosse/manuscript/submit/casestudy_trees.Rdata')
+data <- read.csv("/Volumes/NO NAME2/projects/engongolus/species delimination/data.csv")#
+rownames(data) <- data[,1]#
+tree <- trees[[1]]#
+tree <- drop.tip(tree,tip=c("Carlia_bicarinata","Carlia_schlegeli"))#
+tree$species <- tree$species[-c(which(tree$species=="Carlia_bicarinata"),which(tree$species=="Carlia_schlegeli"))]#
+unknown.tip <- c("Carlia_cf_sexdentata_te","Carlia_cf_decora","Carlia_cf_dogare","Carlia_crypta")#
+names(tree$species) <- tree$tip.label#
+names(tree$tip.label) <- tree$tip.label#
+tree$species[unknown.tip] <- tree$tip.label[unknown.tip]#
+n.species.max <- length(unique(tree$species))#
+species.name <- c(1:n.species.max)#
+names(species.name) <- unique(tree$species)#
+species <- species.name[tree$species]#
+states <- data[tree$species,"state"]#
+names(states) <- tree$tip.label#
+states.sd <- data[tree$species,"state.sd"]#
+names(states.sd) <- tree$tip.label#
+traits <- data[tree$species,c(3,4)]#
+rownames(traits) <- tree$tip.label#
+lambda <- exp.x#
+control=list(method="fftC")#
+#
+lik <- make.prosse.multi(tree, traits, states, states.sd, lambda, control=control)
+states
+states.sd
+lik$pars
+diff(range(states))
+states
+range(states)
+species.name
+state.sd
+states.sd
+traits
+load('/Volumes/NO NAME2/projects/engongolus/prosse/manuscript/submit/casestudy_trees.Rdata')#
+data <- read.csv("/Volumes/NO NAME2/projects/engongolus/species delimination/data.csv")#
+rownames(data) <- data[,1]#
+tree <- trees[[1]]#
+tree <- drop.tip(tree,tip=c("Carlia_bicarinata","Carlia_schlegeli"))#
+tree$species <- tree$species[-c(which(tree$species=="Carlia_bicarinata"),which(tree$species=="Carlia_schlegeli"))]#
+unknown.tip <- c("Carlia_cf_sexdentata_te","Carlia_cf_decora","Carlia_cf_dogare","Carlia_crypta")#
+names(tree$species) <- tree$tip.label#
+names(tree$tip.label) <- tree$tip.label#
+tree$species[unknown.tip] <- tree$tip.label[unknown.tip]#
+n.species.max <- length(unique(tree$species))#
+species.name <- c(1:n.species.max)#
+names(species.name) <- unique(tree$species)#
+species <- species.name[tree$species]#
+states <- data[tree$species,"state"]#
+names(states) <- tree$tip.label#
+states.sd <- data[tree$species,"state.sd"]#
+names(states.sd) <- tree$tip.label#
+traits <- data[tree$species,c(3,4)]#
+rownames(traits) <- tree$tip.label#
+lambda <- exp.x#
+control=list(method="fftC")#
+#
+lik <- make.prosse.multi(tree, traits, states, states.sd, lambda, control=control)
+ls()
+install("/Volumes/NO NAME2/diversitree-2.new")
+load('/Volumes/NO NAME2/projects/engongolus/prosse/manuscript/submit/casestudy_trees.Rdata')#
+data <- read.csv("/Volumes/NO NAME2/projects/engongolus/species delimination/data.csv")#
+rownames(data) <- data[,1]#
+tree <- trees[[1]]#
+tree <- drop.tip(tree,tip=c("Carlia_bicarinata","Carlia_schlegeli"))#
+tree$species <- tree$species[-c(which(tree$species=="Carlia_bicarinata"),which(tree$species=="Carlia_schlegeli"))]#
+unknown.tip <- c("Carlia_cf_sexdentata_te","Carlia_cf_decora","Carlia_cf_dogare","Carlia_crypta")#
+names(tree$species) <- tree$tip.label#
+names(tree$tip.label) <- tree$tip.label#
+tree$species[unknown.tip] <- tree$tip.label[unknown.tip]#
+n.species.max <- length(unique(tree$species))#
+species.name <- c(1:n.species.max)#
+names(species.name) <- unique(tree$species)#
+species <- species.name[tree$species]#
+states <- data[tree$species,"state"]#
+names(states) <- tree$tip.label#
+states.sd <- data[tree$species,"state.sd"]#
+names(states.sd) <- tree$tip.label#
+traits <- data[tree$species,c(3,4)]#
+rownames(traits) <- tree$tip.label#
+lambda <- exp.x#
+control=list(method="fftC")#
+#
+lik <- make.prosse.multi(tree, traits, states, states.sd, lambda, control=control)
+pars <- starting.point.prosse.multi(tree, lik, q.div=5, states, states.sd)
+pars
+lik(pars)
+install("/Volumes/NO NAME2/diversitree-2.new")
+library(diversitree)
+load('/Volumes/NO NAME2/projects/engongolus/prosse/manuscript/submit/casestudy_trees.Rdata')#
+data <- read.csv("/Volumes/NO NAME2/projects/engongolus/species delimination/data.csv")#
+rownames(data) <- data[,1]#
+tree <- trees[[1]]#
+tree <- drop.tip(tree,tip=c("Carlia_bicarinata","Carlia_schlegeli"))#
+tree$species <- tree$species[-c(which(tree$species=="Carlia_bicarinata"),which(tree$species=="Carlia_schlegeli"))]#
+unknown.tip <- c("Carlia_cf_sexdentata_te","Carlia_cf_decora","Carlia_cf_dogare","Carlia_crypta")#
+names(tree$species) <- tree$tip.label#
+names(tree$tip.label) <- tree$tip.label#
+tree$species[unknown.tip] <- tree$tip.label[unknown.tip]#
+n.species.max <- length(unique(tree$species))#
+species.name <- c(1:n.species.max)#
+names(species.name) <- unique(tree$species)#
+species <- species.name[tree$species]#
+states <- data[tree$species,"state"]#
+names(states) <- tree$tip.label#
+states.sd <- data[tree$species,"state.sd"]#
+names(states.sd) <- tree$tip.label#
+traits <- data[tree$species,c(3,4)]#
+rownames(traits) <- tree$tip.label#
+lambda <- exp.x#
+control=list(method="fftC")#
+#
+lik <- make.prosse.multi(tree, traits, states, states.sd, lambda, control=control)
+pars <- starting.point.prosse.multi(tree, lik, q.div=5, states, states.sd)
+lik(pars)
+install("/Volumes/NO NAME2/diversitree-2.new")
+library(diversitree)
+load('/Volumes/NO NAME2/projects/engongolus/prosse/manuscript/submit/casestudy_trees.Rdata')#
+data <- read.csv("/Volumes/NO NAME2/projects/engongolus/species delimination/data.csv")#
+rownames(data) <- data[,1]#
+tree <- trees[[1]]#
+tree <- drop.tip(tree,tip=c("Carlia_bicarinata","Carlia_schlegeli"))#
+tree$species <- tree$species[-c(which(tree$species=="Carlia_bicarinata"),which(tree$species=="Carlia_schlegeli"))]#
+unknown.tip <- c("Carlia_cf_sexdentata_te","Carlia_cf_decora","Carlia_cf_dogare","Carlia_crypta")#
+names(tree$species) <- tree$tip.label#
+names(tree$tip.label) <- tree$tip.label#
+tree$species[unknown.tip] <- tree$tip.label[unknown.tip]#
+n.species.max <- length(unique(tree$species))#
+species.name <- c(1:n.species.max)#
+names(species.name) <- unique(tree$species)#
+species <- species.name[tree$species]#
+states <- data[tree$species,"state"]#
+names(states) <- tree$tip.label#
+states.sd <- data[tree$species,"state.sd"]#
+names(states.sd) <- tree$tip.label#
+traits <- data[tree$species,c(3,4)]#
+rownames(traits) <- tree$tip.label#
+lambda <- exp.x#
+control=list(method="fftC")#
+#
+lik <- make.prosse.multi(tree, traits, states, states.sd, lambda, control=control)
+pars <- starting.point.prosse.multi(tree, lik, q.div=5, states, states.sd)
+lik(pars)
+install("/Volumes/NO NAME2/diversitree-2.new")
+library(diversitree)
+?make.quasse

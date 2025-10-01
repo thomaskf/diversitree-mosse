@@ -1,0 +1,2473 @@
+load('/Volumes/NO NAME2/diversitree-2.new/inst/tests/phy.Rdata')
+ls()
+phy
+library(ape)
+phy
+plot(phy)
+ls(phy)
+phy$tip.state
+types <- sample.int(4,size=length(phy$tip.label),replace=T)
+types
+states <- rnorm(length(phy$tip.label),0.01,0.001)
+states
+Q <- matrix(c(-0.5,0.2,0.1,0.1,#
+				0.1,-0.8,0.3,0.4,#
+				0.2,0.2,-0.6,0.2,#
+				0.3,0.4,0.2,-0.7),4,4)
+Q
+Q <- t(matrix(c(-0.5,0.2,0.1,0.1,#
+				0.1,-0.8,0.3,0.4,#
+				0.2,0.2,-0.6,0.2,#
+				0.3,0.4,0.2,-0.7),4,4))
+Q
+a <- rep(0.25,4)
+b <- rnorm(10,0,1)
+b
+a
+mapply(function (i) a[i]*b,1:3)
+library("devtools")#
+library(roxygen2)#
+install("/Volumes/NO NAME2/diversitree-2.new")#
+3#
+library(diversitree)
+library(testthat)#
+  library(diversitree)#
+  library(parallel)#
+  library(expm)#
+  library(caper)#
+  library(nlme)#
+  library(lubridate)#
+  library(minqa)
+context("MoSSE")
+make.pars.mosse <- diversitree:::make.pars.mosse#
+make.pde.mosse.fftC <- diversitree:::make.pde.mosse.fftC#
+make.pde.mosse.fftR <- diversitree:::make.pde.mosse.fftR#
+#
+make.branches.mosse.fftC <- diversitree:::make.branches.mosse.fftC#
+make.branches.mosse.fftR <- diversitree:::make.branches.mosse.fftR#
+#
+## Basic control list.#
+control.fft <- list(tc=1.3,#
+  				   dt.max=0.01,#
+                   nx=1024,#
+                   dx=10^-4,#
+                   r=4L,#
+                   w=5,#
+                   method="fftR",#
+                   flags=0L, # fftC only#
+                   atol=1e-6, # mol only#
+                   rtol=1e-6, # mol only#
+                   eps=1e-6,  # perhaps scale with dx?#
+                   verbose=0L,#
+                   ntypes=4L)#
+#
+lambda <- sigmoid.x#
+mu <- constant.x#
+diffusion <- 0.001#
+sd <- 0.001#
+#
+##test pde solver on a single branch#
+len <- 2 # Integrate down a branch length of 2#
+#
+Q <- t(matrix(c(-0.5,0.2,0.1,0.1,#
+				0.1,-0.8,0.3,0.4,#
+				0.2,0.2,-0.6,0.2,#
+				0.3,0.4,0.2,-0.7),4,4))
+drift=0
+args <- list(lambda=1:4, mu=5, drift=6, diffusion=7)#
+  pars <- c(0, 0.1, 0.1, 0.01, 0.01, drift, diffusion)#
+#
+  cache <- list(args=args,control=control.fft,lambda=lambda,mu=mu,Q=Q)#
+  f.pars <- make.pars.mosse(cache)#
+  pars.fft <- f.pars(pars)#
+#
+  ## Initial conditions:#
+  vars.fft <- matrix(0, control.fft$nx, 5)#
+  vars.fft[seq_len(pars.fft$lo$ndat),2] <- dnorm(pars.fft$lo$x, 0.1, sd)#
+  vars.hi.fft <- matrix(0, control.fft$nx*control.fft$r, 5)#
+  vars.hi.fft[seq_len(pars.fft$hi$ndat),2] <-#
+    dnorm(pars.fft$hi$x, 0.1, sd)#
+  ##run fftR#
+  pde.fftR <- with(control.fft, make.pde.mosse.fftR(nx, dx*r, dt.max, 5L))
+ans.fftR <- pde.fftR(vars.fft, len, pars.fft$lo, 0, control.fft$dt.max)#
+  branches.fftR <- make.branches.mosse.fftR(control.fft)#
+  ans.b.fftR <- branches.fftR(as.numeric(vars.hi.fft), len, pars.fft, 0)
+ans.fftR
+ans.b.fftR
+control.fft$method <- "fftC"#
+  cache <- list(args=args,control=control.fft,lambda=lambda,mu=mu,Q=Q)#
+  f.pars <- make.pars.mosse(cache)#
+  pars.fft <- f.pars(pars)#
+#
+  ## TEST#
+  #every 4th Q.hi matrix (or every 16 elements) should equal every Q.lo matrix#
+  expect_that(pars.fft$lo$Q[seq(1,pars.fft$lo$ndat*16,16)], equals(pars.fft$hi$Q[seq((control.fft$r-1)*16+1,pars.fft$hi$ndat*16,control.fft$r*16)]))
+pde.fftC <- with(control.fft, make.pde.mosse.fftC(nx, dx*r, dt.max, 5L, flags))#
+  ans.fftC <- pde.fftC(vars.fft, len, pars.fft$lo, 0, control.fft$dt.max)#
+  branches.fftC <- make.branches.mosse.fftC(control.fft)#
+  ans.b.fftC <- branches.fftC(as.numeric(vars.hi.fft), len, pars.fft, 0)
+ans.b.fftC
+expect_that(ans.fftC, equals(ans.fftR))#
+  expect_that(ans.b.fftC, equals(ans.b.fftR))
+drift=1
+args <- list(lambda=1:4, mu=5, drift=6, diffusion=7)#
+  pars <- c(0, 0.1, 0.1, 0.01, 0.01, drift, diffusion)#
+#
+  cache <- list(args=args,control=control.fft,lambda=lambda,mu=mu,Q=Q)#
+  f.pars <- make.pars.mosse(cache)#
+  pars.fft <- f.pars(pars)#
+#
+  ## Initial conditions:#
+  vars.fft <- matrix(0, control.fft$nx, 5)#
+  vars.fft[seq_len(pars.fft$lo$ndat),2] <- dnorm(pars.fft$lo$x, 0.1, sd)#
+  vars.hi.fft <- matrix(0, control.fft$nx*control.fft$r, 5)#
+  vars.hi.fft[seq_len(pars.fft$hi$ndat),2] <-#
+    dnorm(pars.fft$hi$x, 0.1, sd)#
+  ##run fftR#
+  pde.fftR <- with(control.fft, make.pde.mosse.fftR(nx, dx*r, dt.max, 5L))#
+  ans.fftR <- pde.fftR(vars.fft, len, pars.fft$lo, 0, control.fft$dt.max)#
+  branches.fftR <- make.branches.mosse.fftR(control.fft)#
+  ans.b.fftR <- branches.fftR(as.numeric(vars.hi.fft), len, pars.fft, 0)#
+  ##run fftC#
+  control.fft$method <- "fftC"#
+  cache <- list(args=args,control=control.fft,lambda=lambda,mu=mu,Q=Q)#
+  f.pars <- make.pars.mosse(cache)#
+  pars.fft <- f.pars(pars)#
+#
+  ## TEST#
+  #every 4th Q.hi matrix (or every 16 elements) should equal every Q.lo matrix#
+  expect_that(pars.fft$lo$Q[seq(1,pars.fft$lo$ndat*16,16)], equals(pars.fft$hi$Q[seq((control.fft$r-1)*16+1,pars.fft$hi$ndat*16,control.fft$r*16)]))#
+#
+  ## Bail here if no FFTW support#
+  if (!check.fftC(FALSE)) {#
+    next#
+  }#
+  pde.fftC <- with(control.fft, make.pde.mosse.fftC(nx, dx*r, dt.max, 5L, flags))#
+  ans.fftC <- pde.fftC(vars.fft, len, pars.fft$lo, 0, control.fft$dt.max)#
+  branches.fftC <- make.branches.mosse.fftC(control.fft)#
+  ans.b.fftC <- branches.fftC(as.numeric(vars.hi.fft), len, pars.fft, 0)#
+  ## TEST#
+  #FFTC method should give the same answer to the FFTR method#
+  expect_that(ans.fftC, equals(ans.fftR))#
+  expect_that(ans.b.fftC, equals(ans.b.fftR))
+load('/Volumes/NO NAME2/diversitree-2.new/inst/tests/phy.Rdata')
+types <- c(1, 1, 1, 3, 4, 1, 2, 1, 2, 3, 1, 3, 3, 4, 1)#
+names(types) <- phy$tip.label#
+states <- c(0.010707127, 0.009700834, 0.010450199, 0.009184059, 0.010065188, 0.010411688, 0.010025265, 0.010276946, 0.009451115, 0.010506482, 0.009989017, 0.009375481, 0.008813563, 0.009812874, 0.010246622)#
+names(states) <- phy$tip.label#
+states.sd <- rep(0.001,length(phy$tip.label))#
+names(states.sd) <- phy$tip.label#
+#
+pars <- c(0,0.1,0.1,0.01,0.01,0,0.001)#
+control.C.1 <- list(xmax=1)#
+control.R.1 <- list(xmax=1, method="fftR")#
+#
+if (check.fftC(FALSE)) {#
+lik.C.1 <- make.quasse(phy, phy$tip.state, sd, sigmoid.x, constant.x,#
+                       control.C.1)#
+lik.R.1 <- make.quasse(phy, phy$tip.state, sd, sigmoid.x, constant.x,#
+                       control.R.1)#
+#
+expect_that(lik.C.1(pars), equals(-218.2434))#
+expect_that(lik.R.1(pars), equals(-215.5483))#
+#
+## Now, test root treatment:#
+expect_that(lik.C.1(pars, root=ROOT.FLAT), equals(-222.8978))#
+expect_that(lik.C.1(pars, condition.surv=FALSE), equals(-212.2862))#
+root.f <- function(x)#
+  dnorm(x, mean(states), sd(states))#
+expect_that(lik.C.1(pars, root=ROOT.GIVEN, root.f=root.f),#
+            equals(-229.3291))#
+#
+## With drift:#
+pars2 <- pars#
+pars2[6] <- 0.01#
+expect_that(lik.C.1(pars2), equals(-224.631))
+}
+expect_that(lik.C.1(pars), equals(-218.2434))
+expect_that(lik.R.1(pars), equals(-215.5483))
+expect_that(lik.C.1(pars, root=ROOT.FLAT), equals(-222.8978))
+expect_that(lik.C.1(pars, condition.surv=FALSE), equals(-212.2862))
+expect_that(lik.C.1(pars, root=ROOT.GIVEN, root.f=root.f),#
+            equals(-229.3291))
+root.f <- function(x)#
+  dnorm(x, mean(states), sd(states))#
+expect_that(lik.C.1(pars, root=ROOT.GIVEN, root.f=root.f),#
+            equals(-229.3291))
+?expect_that
+expect_that(lik.C.1(pars2), equals(-224.631))
+pars2 <- pars#
+pars2[6] <- 0.01#
+expect_that(lik.C.1(pars2), equals(-224.631))
+?expect_that
+make.branches.mosse.fftR <- function(control) {#
+  nx <- control$nx#
+  dx <- control$dx#
+  r <- control$r#
+  dt.max <- control$dt.max#
+  tc <- control$tc#
+  ntypes <- control$ntypes#
+#
+  f.hi <- make.pde.mosse.fftR(nx*r, dx, dt.max, ntypes+1L)#
+  f.lo <- make.pde.mosse.fftR(nx,   dx * r,   dt.max, ntypes+1L)#
+  combine.branches.mosse(f.hi, f.lo, control)#
+}#
+#
+make.pde.mosse.fftR <- function(nx, dx, dt.max, nd) {#
+  function(y, len, pars, t0, dt.max) {#
+    padding <- pars$padding#
+    ndat <- length(pars$lambda)#
+    nt <- as.integer(ceiling(len / dt.max))#
+    if ( !(length(y) %in% (nd * nx)) )#
+      stop("Wrong size y")#
+    if ( length(pars$lambda) != length(pars$mu) ||#
+         length(pars$lambda) > (nx-3) )#
+      stop("Incorrect length pars")#
+    if ( pars$diffusion <= 0 )#
+      stop("Invalid diffusion parameter")#
+#
+    if ( !is.matrix(y) )#
+      y <- matrix(y, nx, nd)#
+#
+    ans <- mosse.integrate.fftR(y, pars$lambda, pars$mu, pars$drift,#
+                                 pars$diffusion, pars$Q, nt, dt.max, nx, ndat, dx,#
+                                 padding[1], padding[2])#
+    ## Do the log compensation here, to make the careful calcuations#
+    ## easier later.#
+    q <- sum(ans[,-1]) * dx#
+    ans[,-1] <- ans[,-1] / q#
+    list(log(q), ans)#
+  }#
+}#
+#
+## Note that the sign of drift here needs inverting.  (see#
+## src/quasse-eqs-fftC.c:qf_setup_kern() for the equivalent flip).#
+mosse.integrate.fftR <- function(vars, lambda, mu, drift, diffusion, Q,#
+                                  nstep, dt, nx, ndat, dx, nkl, nkr) {#
+  kern <- fftR.make.kern(-dt * drift, sqrt(dt * diffusion),#
+                         nx, dx, nkl, nkr)#
+  fy <- fft(kern)  #
+  for ( i in seq_len(nstep) ) {#
+    vars <- fftR.mosse.propagate.t(vars, lambda, mu, Q, dt, ndat)#
+    vars <- fftR.propagate.x(vars, nx, fy, nkl, nkr)#
+  }#
+  vars#
+}#
+#
+fftR.mosse.propagate.t <- function(vars, lambda, mu, Q, dt, ndat) {#
+  i <- seq_len(ndat)#
+  r <- lambda - mu#
+  z <- exp(dt * r)#
+  e0 <- vars[i,1]#
+  d0 <- vars[i,-1]#
+  vars[i,1] <- (mu + z*(e0 - 1)*mu - lambda*e0) /#
+    (mu + z*(e0 - 1)*lambda - lambda*e0)#
+  dd <- (z * r * r)/(z * lambda - mu + (1-z)*lambda*e0)^2#
+  d0 <- dd * d0#
+  vars[i,-1] <- t(mapply(function (z) d0[z,] %*% Q[[z]], i))#
+  vars#
+}#
+#
+combine.branches.mosse <- function(f.hi, f.lo, control) {#
+  nx <- control$nx#
+  dx <- control$dx#
+  tc <- control$tc#
+  r <- control$r#
+  eps <- log(control$eps)#
+  dt.max <- control$dt.max#
+  nd <- control$ntypes+1#
+#
+  ## Start by normalising the input so that eps up there make#
+  ## sense...#
+  function(y, len, pars, t0, idx) {#
+    if ( t0 < tc ) {#
+      dx0 <- dx#
+      nx0 <- nx * r#
+    } else {#
+      dx0 <- dx * r#
+      nx0 <- nx#
+    }#
+#
+    ## Here, we also squash all negative numbers.#
+    if ( any(y < -1e-8) )#
+      stop("Actual negative D value detected -- calculation failure")#
+    y[y < 0] <- 0#
+    y <- matrix(y, nx0, length(y)/nx0)#
+    q0 <- sum(y[,-1]) * dx0#
+    if ( q0 <= 0 )#
+      stop("No positive D values")#
+    y[,-1] <- y[,-1] / q0#
+    lq0 <- log(q0)#
+    if ( t0 >= tc ) {#
+      ans <- f.lo(y, len, pars$lo, t0, dt.max)#
+    } else if ( t0 + len < tc ) {#
+      ans <- f.hi(y, len, pars$hi, t0, dt.max)#
+    } else {#
+      len.hi <- tc - t0#
+      ans.hi <- f.hi(y, len.hi, pars$hi, t0, dt.max)#
+      y.lo <- ans.hi[[2]][pars$tr,]#
+      lq0 <- lq0 + ans.hi[[1]]#
+      if ( nrow(y.lo) < nx )#
+        y.lo <- rbind(y.lo, matrix(0, nx - length(pars$tr),nd))#
+      ## Fininshing up with the low resolution branch...#
+      ans <- f.lo(y.lo, len - len.hi, pars$lo, tc, dt.max)#
+    }#
+#
+    c(ans[[1]] + lq0, ans[[2]])#
+  }#
+}
+#types: nucleotide types of tip species#
+#ntypes: number of nucleotide types#
+#states: mean substitution rates of tip species#
+#states.sd: standard deviation of substitution rates of tip species#
+#lambda: function of speciation rate against substitution rates#
+#mu: extinction rate#
+#Q: transition rate matrix among nucleotide types#
+#root.f: root nucleotype frequencies at equilibirum#
+#dt.max: define time interval, fix the decimal of branch length, so that we only need to calculate exp(xQdt) once. default is 0.01.#
+#xmax: the order of the upper limit of substitution rate. This is set to 10^-(order+3)*nx*r, so that each interval dx is fixed as 10^-(order+3), which make matrix exponential faster. The lower limit is 0. #
+#nx: the number of bins for substituion rate, should be an integer power of 2. default is 1024.#
+#
+make.mosse <- function (tree, types, ntypes=4, states, states.sd, lambda, mu, Q, control=NULL) {#
+	cache <- make.cache.mosse(tree, types, ntypes, states, states.sd, lambda, mu, Q, control)#
+	all.branches <- make.all.branches.mosse(cache,cache$control)#
+	rootfunc <- make.rootfunc.mosse(cache)#
+	f.pars <- make.pars.mosse(cache)#
+	ll <- function (pars, condition.surv=TRUE, root=ROOT.EQUI, root.f=NULL) {#
+		pars2 <- f.pars(pars)#
+		ans <- all.branches(pars2)#
+		rootfunc(ans, pars2, condition.surv, root, root.f)#
+	}#
+	class(ll) <- c("mosse","dtlik","function")#
+	ll#
+}#
+#
+## 2: info#
+make.info.mosse <- function(lambda, mu, phy) {#
+  ## Work around for .split:#
+  if ( !is.null(lambda) )#
+    argnames <- default.argnames.quasse(lambda, mu)#
+  else#
+    argnames <- NULL#
+  list(name="mosse",#
+       name.pretty="MoSSE",#
+       ## Parameters:#
+       np=NA,#
+       argnames=argnames,#
+       ## Variables:#
+       ny=NA,#
+       k=NA,#
+       idx.e=NA,#
+       idx.d=NA,#
+       ## Phylogeny:#
+       phy=phy,#
+       ## Inference:#
+       ml.default="subplex",#
+       mcmc.lowerzero=FALSE, # not for many models.#
+       ## These are optional#
+       doc=NULL,#
+       reference=NULL,#
+       ## These are special to QuaSSE:#
+       lambda=lambda,#
+       mu=mu)#
+}#
+#
+## 3: make.cache#
+make.cache.mosse <- function(tree, types, ntypes, states, states.sd, lambda, mu, Q, control) {#
+  ## 1: tree#
+  #tree <- check.tree(tree)  #
+#
+  ## 2: states & errors#
+  tmp <- check.states.quasse(tree, states, states.sd)#
+  states <- tmp$states#
+  states.sd <- tmp$states.sd#
+#
+  ## 3: Control structure (lots of checking!)#
+  control <- check.control.mosse(control, tree, states)#
+#
+  cache <- make.cache(tree)#
+  cache$edge.length <- round(cache$edge.length,digits=control$xmax+3)#
+  cache$depth <- round(cache$depth,digits=control$xmax+3)#
+  cache$types <- types#
+  cache$states  <- states#
+  cache$states.sd <- states.sd#
+  control$ntypes <- ntypes#
+  cache$control <- control#
+#
+  ## 4: Speciation/extinction functions#
+  n.lambda <- check.f.quasse(lambda)#
+  n.mu     <- check.f.quasse(mu)#
+  n.args   <- n.lambda + n.mu + 2#
+  args <- list(lambda=seq_len(n.lambda),#
+               mu=seq_len(n.mu) + n.lambda,#
+               drift=n.lambda + n.mu + 1,#
+               diffusion=n.lambda + n.mu + 2)#
+#
+  cache$lambda <- lambda#
+  cache$mu <- mu#
+  cache$args <- args#
+  cache$Q <- Q#
+  cache$info <- make.info.mosse(lambda, mu, tree)#
+#
+  cache#
+}#
+#
+## 4: initial.conditions#
+initial.tip.mosse <- function(cache, control, x) {#
+  nx <- control$nx * control$r#
+  npad <- nx - length(x)#
+  n <- control$ntypes#
+  init <- function(type, mean, sd, n) {#
+  	out <- rep(0, nx*(n+1))#
+  	out[nx*type+1:nx] <- c(dnorm(x, mean, sd), rep(0, npad))#
+  	out#
+  }#
+  y <- mapply(init, cache$types, cache$states, cache$states.sd, n, SIMPLIFY=FALSE)#
+  dt.tips.ordered(y, cache$tips, cache$len[cache$tips])#
+}#
+#
+make.initial.conditions.mosse <- function(control) {#
+  tc <- control$tc#
+  r <- control$r#
+  nx.lo <- control$nx#
+  nx.hi <- nx.lo * r#
+  ntypes <- control$ntypes#
+#
+  ## There is the chance that we could be slightly off on the depth#
+  ## by rounding error.  Because of this, I've done the testing#
+  ## against the *length* of the data, and then checked that the time#
+  ## is appropriate (to within eps of the correct value).  It is#
+  ## possible that two different branches with different numbers of#
+  ## nodes that finish right at the critical interval might have#
+  ## conflicting lengths.#
+  eps <- 1e-8#
+  function(init, pars, t, idx) {#
+    if ( length(init[[1]]) != length(init[[2]]) )#
+      stop("Data have incompatible length")#
+#
+    if ( t < tc ) {#
+      ## if ( length(init[[1]]) / 2 == nx.hi ) { # t < tc#
+      ## if ( !((t - eps) < tc) )#
+      ##   stop("Wrong data size")#
+      nx <- nx.hi#
+      lambda <- pars[[1]]$lambda#
+    } else {#
+      ## if ( !((t + eps) > tc) )#
+      ##   stop("Wrong data size")#
+      nx <- nx.lo#
+      lambda <- pars[[2]]$lambda#
+    }#
+    ndat <- length(lambda)#
+    i <- seq_len(nx)#
+    j <- seq_len(ndat)#
+    out <- numeric(nx*(ntypes+1))#
+    out[i] <- init[[1]][i]#
+    for (z in 1:ntypes) {#
+    	out[nx*z+j] <- init[[1]][nx*z+j] * init[[2]][nx*z+j] * lambda#
+    }#
+    out#
+   }#
+}#
+## 5 rootfunc#
+## This function assumes that the root node is in the low-condition,#
+## which is enforced by the checking.#
+make.rootfunc.mosse <- function(cache) {#
+  root.idx <- cache$root#
+  nx <- cache$control$nx#
+  dx <- cache$control$dx * cache$control$r#
+  ntypes <- cache$control$ntypes#
+  Q <- cache$Q#
+  function(res, pars, condition.surv, root, root.f) {#
+    vals <- matrix(res$vals, nx, (ntypes+1))[seq_len(pars$lo$ndat),]#
+    lq <- res$lq#
+#
+    d.root <- vals[,-1]#
+	root.p <- root.p.mosse(d.root, pars$lo, root, root.f)#
+    if ( condition.surv ) {#
+      lambda <- pars$lo$lambda#
+      e.root <- vals[,1]#
+      d.root <- mapply(function (i) d.root[,i] / (lambda * (1 - e.root)^2), 1:ntypes)#
+    }#
+    log(sum(root.p * d.root) * dx) + sum(lq)#
+  }#
+}#
+#
+root.p.mosse <- function(d.root, pars, root, root.f) {#
+  if ( !is.null(root.f) && root != ROOT.GIVEN )#
+    warning("Ignoring specified root state")#
+  x <- pars$x#
+  dx <- x[2] - x[1]#
+#
+  if ( root == ROOT.FLAT ) {#
+    p <- 1 / ((pars$nx-1) * ntypes * dx)#
+  } else if ( root == ROOT.OBS )  {#
+    p <- d.root / (sum(d.root) * dx)#
+  } else {#
+    ntypes <- dim(pars$Q_orig)[1]#
+  	root.i <- solve(t(cbind(c(1,1,1,1),pars$Q_orig[,-1])),c(1,0,0,0))#
+  	if ( root == ROOT.EQUI ) {#
+    	p <- mapply(function (i) root.i[i] * d.root[,i] / (sum(d.root[,i]) * dx), 1:ntypes)#
+    } else if ( root == ROOT.GIVEN ){#
+    	p <- mapply(function (i) root.i[i] * root.f, 1:ntypes)#
+    }    	#
+  }#
+  p#
+}#
+#
+##6. make.pars#
+make.pars.mosse <- function(cache) {#
+  args <- cache$args#
+  dt.max <- cache$control$dt.max#
+  Q <- cache$Q#
+  ntypes <- cache$control$ntypes#
+  dx <- cache$control$dx#
+  dt.max <- cache$control$dt.max  #
+  r <- cache$control$r  #
+  n.hi <- cache$control$nx * r#
+  function(pars) {#
+    names(pars) <- NULL # Because of use of do.call, strip names#
+#
+    drift <- pars[args$drift]#
+    diffusion <- pars[args$diffusion]#
+#
+    ext <- mosse.extent(cache$control, drift, diffusion)#
+#
+    ## Parameters, expanded onto the extent:#
+    pars <- expand.pars.quasse(cache$lambda, cache$mu, args, ext, pars)#
+#
+    check.pars.quasse(pars$hi$lambda, pars$hi$mu, drift, diffusion)#
+	ndat <- pars$hi$ndat#
+	padding <- pars$hi$padding#
+	pars$hi$Q <- vector("list",n.hi-padding[2])#
+	pars$hi$Q[[1]] <- as.matrix(Matrix::expm(dx*Q*dt.max))#
+	for (i in 1:(n.hi-padding[2]-1)) {#
+		pars$hi$Q[[i+1]] <- pars$hi$Q[[i]]%*%pars$hi$Q[[1]]#
+	}#
+	pars$hi$Q <- pars$hi$Q[(padding[1]+1:ndat)]#
+	pars$lo$Q <- pars$hi$Q[seq(r,n.hi-padding[2],r)]#
+	if (cache$control$method == "fftC") {#
+		pars$hi$Q <- unlist(pars$hi$Q)#
+		pars$lo$Q <- unlist(pars$lo$Q)#
+	}#
+	pars$hi$Q_orig <- pars$lo$Q_orig <- Q#
+	pars#
+  }#
+}#
+#
+mosse.extent <- function(control, drift, diffusion) {#
+  nx <- control$nx#
+  dx <- control$dx#
+  dt <- control$dt.max#
+  r  <- control$r#
+  w <- control$w#
+#
+  mean <- drift * dt#
+  sd   <- sqrt(diffusion * dt)#
+#
+    ## Another option here is to compute all the possible x values and#
+    ## then just drop the ones that are uninteresting?#
+  nkl <- ceiling(-(mean - w * sd)/dx/r) * c(r,1)#
+  nkr <- ceiling( (mean + w * sd)/dx/r) * c(r,1)#
+  ndat <- nx*c(r, 1) - (nkl + 1 + nkr)#
+#
+  padding <- cbind(nkl, nkr)#
+  storage.mode(padding) <- "integer"#
+#
+  ## Concatenate the x values, so that the lambda(x), mu(x)#
+  ## calculations work for both spaces simultaneously.#
+  x <- list(seq(dx, length.out=nx*r, by=dx)[(nkl[1]+1:ndat[1])],#
+            seq(dx*r, length.out=nx, by=dx*r)[(nkl[2]+1:ndat[2])])#
+#
+  tr <- seq(r, length.out=ndat[2], by=r)#
+#
+  list(x=x, padding=padding, ndat=ndat, tr=tr, nx=c(nx*r, nx))#
+}#
+#
+##check control#
+check.control.mosse <- function(control, tree, states) {#
+  tree.length <- max(branching.times(tree))#
+  defaults <- list(tc=tree.length/10,#
+  				   dt.max=0.01,#
+                   nx=1024,#
+                   dx=10^(-(control$xmax+3)),#
+                   r=4,#
+                   w=5,#
+                   method="fftC",#
+                   flags=FFTW.MEASURE, # fftC only#
+                   atol=1e-6, # mol only#
+                   rtol=1e-6, # mol only#
+                   eps=1e-6,  # perhaps scale with dx?#
+                   verbose=FALSE)#
+  control <- if ( is.null(control) )#
+    defaults else modifyList(defaults, control)#
+#
+  ## Eventually, this will contain "mol"#
+  method <- match.arg(control$method, c("fftC", "fftR"))#
+#
+  if ( control$tc <= 0 || control$tc >= tree.length )#
+    stop(sprintf("tc must lie in (0, %2.2f)", tree.length))#
+  if ( log2(control$nx) %% 1 != 0 )#
+    stop("nx must be a power of two")#
+  if ( log2(control$r) %% 1 != 0 )#
+    stop("r must be a power of two")#
+#
+  ## These will be passed through to some C code, so type safety is#
+  ## important.#
+  ctrl.int <- c("nx", "flags", "verbose")#
+  ctrl.num <- c("tc", "dt.max", "r", "w", "atol", "rtol")#
+  control[ctrl.int] <- sapply(control[ctrl.int], as.integer)#
+  control[ctrl.num] <- sapply(control[ctrl.num], as.numeric)#
+#
+  control#
+}#
+#
+#######################################################################
+##core stuff:#
+make.all.branches.mosse <- function(cache, control) {#
+  branches <- make.branches.mosse(cache, control)#
+  initial.conditions <- make.initial.conditions.mosse(control)#
+  function(pars, preset=NULL) {#
+    cache$y <- initial.tip.mosse(cache, cache$control, pars[[1]]$x)#
+    all.branches.list(pars, cache, initial.conditions,#
+                      branches, preset)#
+  }#
+}#
+#
+make.branches.mosse <- function(cache, control) {#
+  ## TODO: strictly, these should be backends...#
+  if ( control$method == "fftC" )#
+    branches <- make.branches.mosse.fftC(control)#
+  else if ( control$method == "fftR" )#
+    branches <- make.branches.mosse.fftR(control)#
+  else # already checked.#
+    stop("Unknown method", control$method)#
+}
+## Functions that provide useful lambda and mu functions.#
+sigmoid.x <- function(x, y0, y1, xmid, r)#
+  y0 + (y1 - y0)/(1 + exp(r * (xmid - x)))#
+sigmoid2.x <- function(x, y0, y1, xmid, r) #
+  y0 + (y1 - y0)/(1 + exp(4 * r * (xmid - x) / (y1 - y0)))#
+constant.x <- function(x, c) rep(c, length(x))#
+noroptimal.x <- function(x, y0, y1, xmid, s2)#
+  y0 + (y1-y0)*exp(-(x - xmid)^2/(2 * s2))#
+make.linear.x <- function(x0, x1) {#
+  if ( is.null(x1) ) {#
+    function(x, c, m) {#
+      x1 <- length(x) - x0 + 1#
+      x[seq_len(x0)]  <- x[x0]#
+      x[x1:length(x)] <- x[x1]#
+      ans <- m * x + c#
+      ans[ans < 0] <- 0#
+      ans#
+    }#
+  } else {#
+    function(x, c, m) {#
+      x[x < x0] <- x0#
+      x[x > x1] <- x1#
+      ans <- m * x + c#
+      ans[ans < 0] <- 0#
+      ans#
+    }#
+  }#
+}#
+stepf.x <- function(x, y0, y1, xmid)#
+  ifelse(x < xmid, y0, y1)#
+#
+normalise <- function(x) x / sum(x)#
+#
+starting.point.quasse <- function(tree, states, states.sd=NULL) {#
+  p.bd <- starting.point.bd(tree)#
+#
+  lik.bm <- make.bm(tree, states, states.sd,#
+                    control=list(method="pruning", backend="C"))#
+  c(p.bd, diffusion=as.numeric(stats::coef(find.mle(lik.bm, .1))))#
+}#
+#
+load.wisdom <- function(file="wisdom") {#
+  w <- paste(readLines(file), collapse="\n")#
+  .Call(r_set_wisdom, w)#
+}#
+#
+save.wisdom <- function(file="wisdom") {#
+  w <- .Call(r_get_wisdom)#
+  write(w, file)#
+}#
+#
+## Checking and sanitisation code:#
+check.f.quasse <- function(f) {#
+  args <- names(formals(f))#
+  if ( args[1] != "x" )#
+    stop("First argument of speciation/extinction function must be x")#
+  length(args) - 1#
+}#
+#
+check.states.quasse <- function(tree, states, states.sd) {#
+  states <- check.states(tree, states, as.integer=FALSE)#
+#
+  if ( length(states.sd) == 1 )#
+    states.sd <- structure(rep(states.sd, length(states)),#
+                           names=names(states))#
+  else#
+    states.sd <- check.states(tree, states.sd, as.integer=FALSE)#
+  list(states=states, states.sd=states.sd)#
+}  #
+#
+check.control.quasse <- function(control, tree, states) {#
+  tree.length <- max(branching.times(tree))#
+  xr <- diff(range(states))#
+  xr.mult <- if ( "xr.mult" %in% names(control) )#
+    control$xr.mult else 5#
+  defaults <- list(tc=tree.length/10,#
+                   dt.max=tree.length/1000,#
+                   nx=1024,#
+                   dx=xr * xr.mult / 1024,#
+                   r=4,#
+                   xmid=mean(range(states)),#
+                   w=5,#
+                   method="fftC",#
+                   tips.combined=FALSE,#
+                   flags=FFTW.MEASURE, # fftC only#
+                   atol=1e-6, # mol only#
+                   rtol=1e-6, # mol only#
+                   eps=1e-6,  # perhaps scale with dx?#
+                   verbose=FALSE)#
+#
+  nx.changed <- "nx" %in% names(control)#
+  dx.changed <- "dx" %in% names(control)#
+  control <- if ( is.null(control) )#
+    defaults else modifyList(defaults, control)#
+  if ( dx.changed && !nx.changed )#
+    control$nx <- 2^ceiling(log2(xr * xr.mult / control$dx))#
+  else if ( nx.changed && !dx.changed )#
+    control$dx <- xr * xr.mult / control$nx#
+#
+  ## Eventually, this will contain "mol"#
+  method <- match.arg(control$method, c("fftC", "fftR", "mol"))#
+#
+  if ( control$tips.combined && method != "fftC" )#
+    stop("'tips.combined' can only be used with method 'fftC'")#
+#
+  if ( control$tc <= 0 || control$tc >= tree.length )#
+    stop(sprintf("tc must lie in (0, %2.2f)", tree.length))#
+  if ( log2(control$nx) %% 1 != 0 )#
+    stop("nx must be a power of two")#
+  if ( log2(control$r) %% 1 != 0 )#
+    stop("r must be a power of two")#
+#
+  rr <- with(control, xmid + c(-1,1) * dx * nx / 2)#
+  rmin <- min(c(1, -1) * (mean(range(states)) - rr) / (xr / 2))#
+  if ( rmin - xr.mult < -1e-5 )#
+    warning("Range does not look wide enough - be careful!")#
+  else if ( rmin < 2 )#
+    stop("Range is not wide enough")#
+#
+  ## These will be passed through to some C code, so type safety is#
+  ## important.#
+  ctrl.int <- c("nx", "flags", "verbose")#
+  ctrl.num <- c("tc", "dt.max", "r", "xmid", "w", "atol", "rtol")#
+  control[ctrl.int] <- sapply(control[ctrl.int], as.integer)#
+  control[ctrl.num] <- sapply(control[ctrl.num], as.numeric)#
+#
+  control#
+}#
+#
+## I use a number of elements of pars.#
+## pars[[i]]${lambda,mu,drift,diffusion,padding}#
+## pars$tr#
+expand.pars.quasse <- function(lambda, mu, args, ext, pars) {#
+  pars.use <- vector("list", 2)#
+  for ( i in c(1,2) ) {#
+    x <- list()#
+    pars.use[[i]] <-#
+      list(x=ext$x[[i]], # May screw other things up (was $x[i])#
+           lambda=do.call(lambda, c(ext$x[i], pars[args$lambda])),#
+           mu=do.call(mu, c(ext$x[i], pars[args$mu])),#
+           drift=pars[args$drift],#
+           diffusion=pars[args$diffusion],#
+           padding=ext$padding[i,],#
+           ndat=ext$ndat[i],#
+           nx=ext$nx[i])#
+  }#
+  names(pars.use) <- c("hi", "lo")#
+  pars.use$tr <- ext$tr#
+  pars.use#
+}#
+#
+make.pars.quasse <- function(cache) {#
+  args <- cache$args#
+#
+  function(pars) {#
+    names(pars) <- NULL # Because of use of do.call, strip names#
+#
+    drift <- pars[args$drift]#
+    diffusion <- pars[args$diffusion]#
+#
+    ext <- quasse.extent(cache$control, drift, diffusion)#
+    ## This would confirm the translation:#
+    ##   all.equal(ext$x[[1]][ext$tr], ext$x[[2]])#
+#
+    ## Parameters, expanded onto the extent:#
+    pars <- expand.pars.quasse(cache$lambda, cache$mu, args, ext, pars)#
+#
+    check.pars.quasse(pars$hi$lambda, pars$hi$mu, drift, diffusion)#
+#
+    pars#
+  }#
+}#
+#
+quasse.extent <- function(control, drift, diffusion) {#
+  nx <- control$nx#
+  dx <- control$dx#
+  dt <- control$dt.max#
+  xmid <- control$xmid#
+  r  <- control$r#
+  w <- control$w#
+#
+  if ( control$method == "mol" ) {#
+    ndat <- nx*c(r, 1)#
+    padding <- NULL#
+  } else {#
+    mean <- drift * dt#
+    sd   <- sqrt(diffusion * dt)#
+#
+    ## Another option here is to compute all the possible x values and#
+    ## then just drop the ones that are uninteresting?#
+    nkl <- max(ceiling(-(mean - w * sd)/dx)) * c(r, 1)#
+    nkr <- max(ceiling( (mean + w * sd)/dx)) * c(r, 1)#
+    ndat <- nx*c(r, 1) - (nkl + 1 + nkr)#
+#
+    padding <- cbind(nkl, nkr)#
+    storage.mode(padding) <- "integer"#
+  }#
+#
+  x0.2 <- xmid - dx*ceiling((ndat[2] - 1)/2)#
+  x0.1 <- x0.2 - dx*(1 - 1/r)#
+#
+  ## Concatenate the x values, so that the lambda(x), mu(x)#
+  ## calculations work for both spaces simultaneously.#
+  x <- list(seq(x0.1, length.out=ndat[1], by=dx/r),#
+            seq(x0.2, length.out=ndat[2], by=dx))#
+#
+  tr <- seq(r, length.out=ndat[2], by=r)#
+#
+  list(x=x, padding=padding, ndat=ndat, tr=tr, nx=c(nx*r, nx))#
+}#
+#
+combine.branches.quasse <- function(f.hi, f.lo, control) {#
+  nx <- control$nx#
+  dx <- control$dx#
+  tc <- control$tc#
+  r <- control$r#
+  eps <- log(control$eps)#
+  dt.max <- control$dt.max#
+#
+  ## This is hacky version of the log compensation.  It also reduces#
+  ## the stepsize when bisecting a branch.  It doesn't seem to change#
+  ## much on #
+  careful <- function(f, y, len, pars, t0, dt.max) {#
+    ans <- f(y, len, pars, t0)#
+    if ( ans[[1]] > eps ) { # OK#
+      ans#
+    } else {#
+      if ( control$method == "fftC" ||#
+           control$method == "fftR" )#
+        dt.max <- dt.max / 2 # Possibly needed#
+      len2 <- len/2#
+      ans1 <- Recall(f, y,         len2, pars, t0,        dt.max)#
+      ans2 <- Recall(f, ans1[[2]], len2, pars, t0 + len2, dt.max)#
+      ans2[[1]][[1]] <- ans1[[1]][[1]] + ans2[[1]][[1]]#
+      ans2#
+    }#
+  }#
+#
+  ## Start by normalising the input so that eps up there make#
+  ## sense...#
+  function(y, len, pars, t0, idx) {#
+    if ( t0 < tc ) {#
+      dx0 <- dx / r#
+      nx0 <- nx * r#
+    } else {#
+      dx0 <- dx#
+      nx0 <- nx#
+    }#
+#
+    ## Here, we also squash all negative numbers.#
+    if ( any(y < -1e-8) )#
+      stop("Actual negative D value detected -- calculation failure")#
+    y[y < 0] <- 0#
+    y <- matrix(y, nx0, 2)#
+    q0 <- sum(y[,2]) * dx0#
+    if ( q0 <= 0 )#
+      stop("No positive D values")#
+    y[,2] <- y[,2] / q0#
+    lq0 <- log(q0)#
+    if ( t0 >= tc ) {#
+      ans <- careful(f.lo, y, len, pars$lo, t0, dt.max)#
+    } else if ( t0 + len < tc ) {#
+      ans <- careful(f.hi, y, len, pars$hi, t0, dt.max)#
+    } else {#
+      len.hi <- tc - t0#
+      ans.hi <- careful(f.hi, y, len.hi, pars$hi, t0, dt.max)#
+#
+      y.lo <- ans.hi[[2]][pars$tr,]#
+      lq0 <- lq0 + ans.hi[[1]]#
+      if ( nrow(y.lo) < nx )#
+        y.lo <- rbind(y.lo, matrix(0, nx - length(pars$tr), 2))#
+#
+      ## Fininshing up with the low resolution branch...#
+      ans <- careful(f.lo, y.lo, len - len.hi, pars$lo, tc, dt.max)#
+    }#
+#
+    c(ans[[1]] + lq0, ans[[2]])#
+  }#
+}
+## Models should provide:#
+##   1. make#
+##   2. info#
+##   3. make.cache, including initial tip conditions#
+##   4. initial.conditions(init, pars,t, idx)#
+##   5. rootfunc(res, pars, ...)#
+#
+## Common other functions include:#
+##   stationary.freq#
+##   starting.point#
+##   branches#
+#
+## 1: make#
+make.quasse <- function(tree, states, states.sd, lambda, mu,#
+                            control=NULL, sampling.f=NULL) {#
+  cache <- make.cache.quasse(tree, states, states.sd, lambda, mu,#
+                             control, sampling.f)#
+  all.branches <- make.all.branches.quasse(cache, cache$control)#
+  rootfunc <- make.rootfunc.quasse(cache)#
+  f.pars <- make.pars.quasse(cache)#
+#
+  ll <- function(pars, condition.surv=TRUE, root=ROOT.OBS,#
+                 root.f=NULL, intermediates=FALSE) {#
+    pars2 <- f.pars(pars)#
+    ans <- all.branches(pars2, intermediates)#
+    rootfunc(ans, pars2, condition.surv, root, root.f, intermediates)#
+  }#
+#
+  class(ll) <- c("quasse", "dtlik", "function")#
+  ll#
+}#
+#
+## 2: info#
+make.info.quasse <- function(lambda, mu, phy) {#
+  ## Work around for .split:#
+  if ( !is.null(lambda) )#
+    argnames <- default.argnames.quasse(lambda, mu)#
+  else#
+    argnames <- NULL#
+  list(name="quasse",#
+       name.pretty="QuaSSE",#
+       ## Parameters:#
+       np=NA,#
+       argnames=argnames,#
+       ## Variables:#
+       ny=NA,#
+       k=NA,#
+       idx.e=NA,#
+       idx.d=NA,#
+       ## Phylogeny:#
+       phy=phy,#
+       ## Inference:#
+       ml.default="subplex",#
+       mcmc.lowerzero=FALSE, # not for many models.#
+       ## These are optional#
+       doc=NULL,#
+       reference=c("FitzJohn (2010) doi:10.1093/sysbio/syq053"),#
+       ## These are special to QuaSSE:#
+       lambda=lambda,#
+       mu=mu)#
+}#
+default.argnames.quasse <- function(lambda, mu) {#
+  c(sprintf("l.%s", names(formals(lambda))[-1]),#
+    sprintf("m.%s", names(formals(mu))[-1]),#
+    "drift", "diffusion")#
+}#
+#
+## 3: make.cache (& initial conditions)#
+make.cache.quasse <- function(tree, states, states.sd, lambda, mu,#
+                              control, sampling.f, for.split=FALSE) {#
+  ## 1: tree#
+  tree <- check.tree(tree)  #
+#
+  ## 2: states & errors#
+  tmp <- check.states.quasse(tree, states, states.sd)#
+  states <- tmp$states#
+  states.sd <- tmp$states.sd#
+#
+  ## 3: Control structure (lots of checking!)#
+  control <- check.control.quasse(control, tree, states)#
+#
+  cache <- make.cache(tree)#
+  cache$states  <- states#
+  cache$states.sd <- states.sd#
+  cache$control <- control#
+#
+  ## This is a bit ugly, but only do these checks if we are *not*#
+  ## doing a split QuaSSE model.  Function checking is done separately#
+  ## there, but everything above is the same.#
+  if ( !for.split ) {#
+    ## 4: Speciation/extinction functions#
+    n.lambda <- check.f.quasse(lambda)#
+    n.mu     <- check.f.quasse(mu)#
+    n.args   <- n.lambda + n.mu + 2#
+    args <- list(lambda=seq_len(n.lambda),#
+                 mu=seq_len(n.mu) + n.lambda,#
+                 drift=n.lambda + n.mu + 1,#
+                 diffusion=n.lambda + n.mu + 2)#
+#
+    cache$lambda <- lambda#
+    cache$mu <- mu#
+    cache$args <- args#
+#
+    sampling.f <- check.sampling.f(sampling.f, 1)#
+    cache$sampling.f <- sampling.f#
+  }#
+  cache$info <- make.info.quasse(lambda, mu, tree)#
+#
+  cache#
+}#
+initial.tip.quasse <- function(cache, control, x) {#
+  nx <- control$nx * control$r#
+  npad <- nx - length(x)#
+  e0 <- 1 - cache$sampling.f#
+#
+  if ( control$tips.combined ) {#
+    tips <- cache$tips#
+    t <- cache$len[tips]#
+    i <- order(t)#
+    target <- tips[i]#
+#
+    states <- cache$states[i]#
+    states.sd <- cache$states.sd[i]#
+#
+    y <- mapply(function(mean, sd)#
+                c(dnorm(x, mean, sd), rep(0, npad)),#
+                states, states.sd, SIMPLIFY=FALSE)#
+    y <- matrix(c(rep(e0, nx), unlist(y)), nx, length(target)+1)#
+#
+    list(target=target, y=y, t=t[i])#
+  } else {#
+    y <- mapply(function(mean, sd)#
+                c(rep(e0, nx),#
+                  dnorm(x, mean, sd), rep(0, npad)),#
+                cache$states, cache$states.sd, SIMPLIFY=FALSE)#
+    dt.tips.ordered(y, cache$tips, cache$len[cache$tips])#
+  }#
+}#
+#
+## 4: initial.conditions#
+make.initial.conditions.quasse <- function(control) {#
+  tc <- control$tc#
+  r <- control$r#
+  nx.lo <- control$nx#
+  nx.hi <- nx.lo * r#
+#
+  ## There is the chance that we could be slightly off on the depth#
+  ## by rounding error.  Because of this, I've done the testing#
+  ## against the *length* of the data, and then checked that the time#
+  ## is appropriate (to within eps of the correct value).  It is#
+  ## possible that two different branches with different numbers of#
+  ## nodes that finish right at the critical interval might have#
+  ## conflicting lengths.#
+  eps <- 1e-8#
+  function(init, pars, t, idx) {#
+    if ( length(init[[1]]) != length(init[[2]]) )#
+      stop("Data have incompatible length")#
+#
+    if ( t < tc ) {#
+      ## if ( length(init[[1]]) / 2 == nx.hi ) { # t < tc#
+      ## if ( !((t - eps) < tc) )#
+      ##   stop("Wrong data size")#
+      nx <- nx.hi#
+      lambda <- pars[[1]]$lambda#
+    } else {#
+      ## if ( !((t + eps) > tc) )#
+      ##   stop("Wrong data size")#
+      nx <- nx.lo#
+      lambda <- pars[[2]]$lambda#
+    }#
+    ndat <- length(lambda)#
+    i <- seq_len(nx)#
+    j <- seq.int(nx+1, nx + ndat)#
+#
+    c(init[[1]][i],#
+      init[[1]][j] * init[[2]][j] * lambda,#
+      rep.int(0.0, nx - ndat))#
+  }#
+}#
+#
+## 5 rootfunc#
+## This function assumes that the root node is in the low-condition,#
+## which is enforced by the checking.#
+make.rootfunc.quasse <- function(cache) {#
+  root.idx <- cache$root#
+  nx <- cache$control$nx#
+  dx <- cache$control$dx#
+  function(res, pars, condition.surv, root, root.f, intermediates) {#
+    vals <- matrix(res$vals, nx, 2)[seq_len(pars$lo$ndat),]#
+    lq <- res$lq#
+#
+    d.root <- vals[,2]#
+#
+    root.p <- root.p.quasse(d.root, pars$lo, root, root.f)#
+    if ( condition.surv ) {#
+      lambda <- pars$lo$lambda#
+      e.root <- vals[,1]#
+      d.root <- d.root / sum(root.p * lambda * (1 - e.root)^2) * dx#
+    }#
+#
+    loglik <- log(sum(root.p * d.root) * dx) + sum(lq)#
+#
+    if ( intermediates ) {#
+      attr(loglik, "intermediates") <- res#
+      attr(loglik, "vals") <- vals#
+    }#
+    loglik#
+  }#
+}#
+#
+root.p.quasse <- function(d.root, pars, root, root.f) {#
+  if ( !is.null(root.f) && root != ROOT.GIVEN )#
+    warning("Ignoring specified root state")#
+  x <- pars$x#
+  dx <- x[2] - x[1]#
+#
+  if ( root == ROOT.FLAT ) {#
+    p <- 1 / ((pars$nx-1) * dx)#
+  } else if ( root == ROOT.OBS )  {#
+    p <- d.root / (sum(d.root) * dx)#
+  } else if ( root == ROOT.GIVEN ) {#
+    p <- root.f(x)#
+  } else {#
+    stop("Unsupported root mode")#
+  }#
+#
+  p#
+}#
+#
+#######################################################################
+## Extra core stuff:#
+make.all.branches.quasse <- function(cache, control) {#
+  branches <- make.branches.quasse(cache, control)#
+  initial.conditions <- make.initial.conditions.quasse(control)#
+  ## TODO: This is where tips.combined goes, *not* in the likelihood#
+  ## function...#
+  function(pars, intermediates, preset=NULL) {#
+    cache$y <- initial.tip.quasse(cache, cache$control, pars[[1]]$x)#
+    all.branches.list(pars, cache, initial.conditions,#
+                      branches, preset)#
+  }#
+}#
+#
+make.branches.quasse <- function(cache, control) {#
+  ## TODO: strictly, these should be backends...#
+  if ( control$method == "fftC" )#
+    branches <- make.branches.quasse.fftC(control)#
+  else if ( control$method == "fftR" )#
+    branches <- make.branches.quasse.fftR(control)#
+  else if ( control$method == "mol" )#
+    branches <- make.branches.quasse.mol(control)#
+  else # already checked.#
+    stop("Unknown method", control$method)#
+}#
+#
+check.pars.quasse <- function(lambda.x, mu.x, drift, diffusion) {#
+  if ( any(!is.finite(c(lambda.x, mu.x, drift, diffusion))) )#
+    stop("Non-finite/NA parameters")#
+  if ( any(lambda.x < 0) || any(mu.x < 0) || diffusion <= 0 )#
+    stop("Illegal negative parameters")#
+  if ( !any(lambda.x > 0) )#
+    stop("No positive lambda; cannot compute likelihood")#
+}#
+## Huge chunks of this are shared with predict.dtlik.t, but it's not#
+## clear yet where the similarities lie.#
+## predict.quasse <- function(object, p, x, nx=101, v=NULL,#
+##                            thin=10, alpha=1/20, ...) {#
+##   cache <- get.cache(object)#
+#
+##   if ( inherits(p, "fit.mle") )#
+##     p <- stats::coef(p, full=TRUE)#
+##   else if ( inherits(p, "mcmcsamples") )#
+##     p <- stats::coef(p, lik=object, full=TRUE, thin=thin)#
+##   ## The other case to deal with here would be constrained functions#
+##   ## where parameters still need expanding...#
+##   if ( missing(x) ) {#
+##     r <- range(cache$states, na.rm=TRUE)#
+##     x <- seq(r[1], r[2], length.out=nx)#
+##   }#
+##   if ( is.null(v) )#
+##     v <- c("lambda", "mu")#
+#
+##   f <- function(i) {#
+##     g <- function(x, p, ...)#
+##       do.call(cache$info[[i]], as.list(x=x, p))#
+##     average.over.mcmc(p[,cache$args[[i]]], g,#
+##                       x, alpha=alpha)#
+##   }#
+#
+##   for ( i in v ) {#
+##   }#
+#
+##   stop()#
+##   ## average.over.mcmc(p, #
+#
+##   f <- function(x) {#
+##     y <- sort(linear(x, samples$l.c, samples$l.m))#
+##     c(mean(y),                            # mean#
+##       quantile(y, c(alpha/2, 1-alpha/2))) # range#
+##   }#
+##   list(x=xx, y=do.call(rbind, lapply(xx, f)))#
+## }#
+#
+## predict.quasse.split <- function(object, p, x, nx, ...) {#
+##   stop()#
+## }
+## This is the general calculation code for diversitree.  Many models#
+## require that calculations occur down a branch, and the results of#
+## these calculations are used as initial conditions for the next#
+## branch.  There are several different implemented models using this#
+## approach:#
+##   - BiSSE (model-bisse.R)#
+##   - MuSSE (multi-state BiSSE - model-musse.R)#
+##   - QuaSSE#
+##   - Time-dependent BiSSE, MuSSE#
+##   - BD2 (HIV model)#
+#
+## I have abstracted most of the calculations in a (hopefully) general#
+## way.  The function 'all.branches' does most of the calculations;#
+## this looks after all the book-keeping as calculations proceed down#
+## a tree.  Models will generally use this as their main function, but#
+## with additional root state calculations after this calculation has#
+## finished (see model-bisse.R for the canonical example of this).#
+#
+## all.branches takes arguments#
+##   pars, cache, initial.conditions, branches#
+## These are#
+###
+##   pars: parameters for the model.  No checks are done at all on the#
+##   size or contents of this (all.branches knows nothing about what#
+##   is appropriate)#
+###
+##   cache: A cache object produced by make.cache(), possibly#
+##   augmented with additional information.#
+###
+##   initial.conditions: This calculates the initial conditions for an#
+##   *internal branch*, given the values of variables at the base of#
+##   its two daughters (this is not the initial conditions for the#
+##   tips, which are computed elsewhere - see make.cache).  This#
+##   function takes the arguments:#
+##     init, pars, is.root#
+##   where#
+##     'init': a two-row, npar column matrix of initial conditions#
+##     corresponding to the base conditions of the two daugher#
+##     branches.#
+##     'pars': the parameters as given into all.branches#
+##     'is.root': boolean indicating if the node is the root or not#
+##   This function must return a vector of length npar+1.  The first#
+##   of these is the log-compensation value (zero if none applied),#
+##   and the rest are the new initial conditions.  all.branches checks#
+##   to make sure that the log-compensation value is finite as a way#
+##   of making sure that the calculations succeeded.#
+##   initial.conditions may produce informative errors instead, or#
+##   warnings to inform of this failure.#
+###
+##   branches: This function calculates values of variables at the#
+##   base of a branch, given that branchs' initial conditions.  It#
+##   takes arguments:#
+##     y, len, pars, t0#
+##   where#
+##     'y': a vector of initial conditions (length npar)#
+##     'len': the length of the branch#
+##     'pars': the parameters as passed to all.branches#
+##     't0': the time at the tip of the branch#
+##   Note that the base of the branch is at time t0 + len.  This#
+##   function must return a vector of length 'npar', being the#
+##   variables at the base of the branch.#
+###
+##   'branches' may be able to deal with multiple branches at the#
+##   present (this is the case in BiSSE, where because there are only#
+##   three possible initial conditions, variables required for short#
+##   branches are often already computed on longer branches.  If#
+##   presented with a vector of 'len' at 'depth=0', branches must#
+##   return a matrix of variables of dimensions length(len) x npar.#
+##   Whether this is required or not depends on the initial conditions#
+##   produced by make.cache - see the documentation there and also for#
+##   the bisse initial.condition and branches functions.#
+#
+## The 'as.list' argument is to handle cases, such as QuaSSE, where#
+## the output from branches() is of variable length and the result#
+## should be stored in a list, rather than a matrix.  It is *not* to#
+## switch between a choice of what is returned.#
+#
+## TODO: the 'zero' in the tip branches() calls assume that the tree#
+## is ultrametric.  I can pass in#
+##   cache$depth[idx]#
+## but I need to be careful with this, as some depths will be#
+## 1e-15 and things like that.  This may not be a problem in reality.#
+#
+all.branches.matrix <- function(pars, cache, initial.conditions,#
+                                branches, preset=NULL) {#
+  len <- cache$len#
+  depth <- cache$depth#
+  children <- cache$children#
+  order <- cache$order[-length(cache$order)]#
+  root <- cache$root#
+#
+  n <- length(len)#
+  lq <- rep(0, n)#
+  n.tip <- cache$n.tip#
+#
+  y <- cache$y#
+  branch.init <- branch.base <- matrix(NA, cache$info$ny, n)#
+#
+  ## TODO: It might be an idea here to check preset is OK:#
+  ## Must have names target, lq, base#
+  ## must be of same length.#
+  if ( !is.null(preset) ) {#
+    lq[preset$target] <- preset$lq#
+    branch.base[,preset$target] <- preset$base#
+  }#
+#
+  if ( is.null(names(y)) ) { # dt.tips.grouped#
+    for ( x in y ) {#
+      if ( !is.null(x) ) {#
+        ## The above is because sometimes 'x' will be NULL.  This#
+        ## happens when there is no polymorphism across tips, usually#
+        ## when most of the tips are unresolved clades.#
+        idx <- x$target#
+        branch.init[,idx] <- x$y#
+        ans <- branches(x$y, x$t, pars, 0, idx)#
+        lq[idx] <- ans[[1]]#
+        branch.base[,idx] <- ans[[2]]#
+      }#
+    }#
+  } else { # y$type == "ORDERED"#
+    tip.t <- y$t#
+    tip.target <- y$target#
+    tip.y <- branch.init[,tip.target] <- y$y#
+    for ( i in seq_along(tip.t) ) {#
+      idx <- tip.target[i]#
+      ans <- branches(tip.y[,i], tip.t[i], pars, 0, idx)#
+      lq[idx] <- ans[[1]]#
+      branch.base[,idx] <- ans[[2]]#
+    }#
+  }#
+#
+  for ( i in order ) {#
+    y.in <- initial.conditions(branch.base[,children[i,]], pars,#
+                               depth[i], i)#
+    if ( !all(is.finite(y.in)) )#
+      stop("Bad initial conditions: calculation failure along branches?")#
+    branch.init[,i] <- y.in#
+    ans <- branches(y.in, len[i], pars, depth[i], i)#
+    lq[i] <- ans[[1]]#
+    branch.base[,i] <- ans[[2]]#
+  }#
+#
+  y.in <- initial.conditions(branch.base[,children[root,]], pars,#
+                             depth[root], root)#
+  branch.init[,root] <- y.in#
+  list(init=branch.init, base=branch.base, lq=lq, vals=y.in)#
+}#
+#
+all.branches.list <- function(pars, cache, initial.conditions,#
+                              branches, preset) {#
+  len <- cache$len#
+  depth <- cache$depth#
+  children <- cache$children#
+  order <- cache$order[-length(cache$order)]#
+  root <- cache$root#
+#
+  n <- length(len)#
+  lq <- rep(0, n)#
+  n.tip <- cache$n.tip#
+#
+  y <- cache$y#
+  branch.init <- branch.base <- vector("list", n)#
+#
+  if ( !is.null(preset) ) {#
+    lq[preset$target] <- preset$lq#
+    branch.base[preset$target] <- preset$base#
+  }#
+#
+  if ( is.null(names(y)) ) { # dt.tips.grouped#
+    for ( x in y ) {#
+      if ( !is.null(x) ) {#
+        idx <- x$target#
+        branch.init[idx] <- list(x$y)#
+        ans <- branches(x$y, x$t, pars, 0, idx)#
+        lq[idx] <- unlist(lapply(ans, "[[", 1))#
+        branch.base[idx] <- lapply(ans, "[", -1)#
+      }#
+    }#
+  } else { # dt.tips.ordered#
+    tip.t <- y$t#
+    tip.target <- y$target#
+    tip.y <- branch.init[tip.target] <- y$y#
+    for ( i in seq_along(tip.t) ) {#
+      idx <- tip.target[i]#
+      ans <- branches(tip.y[[i]], tip.t[i], pars, 0, idx)#
+      lq[idx] <- ans[[1]]#
+      branch.base[[idx]] <- ans[-1]#
+    }#
+  }#
+#
+  for ( i in order ) {#
+    y.in <- initial.conditions(branch.base[children[i,]], pars,#
+                               depth[i], i)#
+    ## TODO: This is temporary to acomodate BBM.  Will change#
+    ## shortly.#
+    if ( !is.list(y.in) && !all(is.finite(y.in)) )#
+      stop("Bad initial conditions: calculation failure along branches?")#
+    branch.init[[i]] <- y.in#
+    ans <- branches(y.in, len[i], pars, depth[i], i)#
+    lq[i] <- ans[[1]]#
+    branch.base[[i]] <- ans[-1]#
+  }#
+#
+  y.in <- initial.conditions(branch.base[children[root,]], pars,#
+                             depth[root], root)#
+  branch.init[[root]] <- y.in#
+  list(init=branch.init, base=branch.base, lq=lq, vals=y.in)#
+}#
+#
+## This is the minimal cache function, but not calculating initial#
+## conditions, which will take the element 'y'.#
+make.cache <- function(tree) {#
+  ## This works around some ape bugs with class inheritance.#
+  if (inherits(tree, "phylo"))#
+    class(tree) <- "phylo"#
+  edge <- tree$edge#
+  edge.length <- tree$edge.length#
+  idx <- seq_len(max(edge))#
+  n.tip <- length(tree$tip.label)#
+  tips <- seq_len(n.tip)#
+  root <- n.tip + 1#
+#
+  is.tip <- idx <= n.tip#
+#
+  children <- get.children(edge, n.tip)#
+#
+  parent <- edge[match(idx, edge[,2]),1]#
+#
+  order <- get.ordering(children, is.tip, root)#
+  len <- edge.length[match(idx, edge[,2])]#
+#
+  ## This is a bit of a hack, but this is to ensure that we can really#
+  ## compute the depths accurately - this is a problem when there#
+  ## joins (under split models) that occur right around nodes.#
+  height <- branching.heights(tree)#
+  depth <- max(height) - height#
+  depth2 <- branching.depth(len, children, order, tips)#
+  i <- abs(depth - depth2) < 1e-8#
+  depth[i] <- depth2[i]#
+#
+  if ( is.ultrametric(tree) )#
+    ## It is possible that an ultrametric tree will not quite have the#
+    ## tips around zero.  This ensures it, which is is required for#
+    ## dt.tips.grouped to work at present.#
+    depth[tips] <- 0#
+#
+  ## TODO: I don't need this ancestor thing for much - drop it here#
+  ## and move it to the asr code that actually uses it (this takes a#
+  ## lot of time, and is only used by the ASR code).#
+  ## The only place that this is used at all is do.asr.marginal(); it#
+  ## would be possible to make this as needed when making an#
+  ## asr.marginal() function.#
+  anc <- vector("list", max(order))#
+  for ( i in c(rev(order[-length(order)]), tips) )#
+    anc[[i]] <- c(parent[i], anc[[parent[i]]])#
+#
+  ans <- list(tip.label=tree$tip.label,#
+              node.label=tree$node.label,#
+              len=len,#
+              children=children,#
+              parent=parent,#
+              order=order,#
+              root=root,#
+              n.tip=n.tip,#
+              n.node=tree$Nnode,#
+              tips=tips,#
+              height=height,#
+              depth=depth,#
+              ancestors=anc,#
+              edge=edge,#
+              edge.length=edge.length)#
+  ans#
+}#
+#
+## Node ordering, as used by make.cache()#
+get.ordering <- function(children, is.tip, root) {#
+  todo <- list(root)#
+  i <- root#
+  repeat {#
+    kids <- children[i,]#
+    i <- kids[!is.tip[kids]]#
+    if ( length(i) > 0 )#
+      todo <- c(todo, list(i))#
+    else#
+      break#
+  }#
+  as.vector(unlist(rev(todo)))#
+}#
+#
+ROOT.FLAT  <- 1#
+ROOT.EQUI  <- 2#
+ROOT.OBS   <- 3#
+ROOT.GIVEN <- 4#
+ROOT.BOTH  <- 5#
+ROOT.MAX   <- 6#
+ROOT.ALL   <- ROOT.BOTH#
+root.p.calc <- function(vals, pars, root, root.p=NULL,#
+                        root.equi=NULL) {#
+  if ( !is.null(root.p) && root != ROOT.GIVEN )#
+    warning("Ignoring specified root state")#
+#
+  k <- length(vals)#
+#
+  if ( root == ROOT.FLAT ) {#
+    p <- 1/k#
+  } else if ( root == ROOT.EQUI ) {#
+    if ( is.null(root.equi) )#
+      stop("Equilibrium root probability not possible with this method")#
+    p <- root.equi(pars)#
+  } else if ( root == ROOT.OBS ) {#
+    p <- vals / sum(vals)#
+  } else if ( root == ROOT.GIVEN ) {#
+    if ( length(root.p) != length(vals) )#
+      stop("Invalid length for root.p")#
+    p <- root.p#
+  } else if ( root == ROOT.ALL ) {#
+    p <- rep(1, k)#
+  } else {#
+    stop("Invalid root mode")#
+  }#
+  p#
+}#
+#
+## Convert a branches function into one that adds log-compensation.#
+## This is not compulsary to use, but should make life easier.#
+make.branches.comp <- function(branches, comp.idx, eps=0) {#
+  if ( length(comp.idx) > 0 )#
+    function(y, len, pars, t0, idx) {#
+      ret <- branches(y, len, pars, t0, idx)#
+      q <- colSums(ret[comp.idx,,drop=FALSE])#
+      if ( all(q >= eps) ) {#
+        i <- q > 0#
+        ret[comp.idx,i] <- ret[comp.idx,i] /#
+          rep(q[i], each=length(comp.idx))#
+        lq <- q#
+        lq[i] <- log(q[i])#
+        list(lq, ret)#
+      } else {#
+        ti <- len[length(len)]/2#
+        len1 <- c(len[len <= ti], ti)#
+        len2 <- len[len > ti] - ti#
+        n1 <- length(len1)#
+#
+        ret1 <- Recall(y, len1, pars, t0)#
+        ret2 <- Recall(ret1[[2]][,n1], len2, pars, t0 + ti)#
+        ret2[[1]] <- ret2[[1]] + ret1[[1]][n1]#
+#
+        list(c(ret1[[1]][-n1], ret2[[1]]),#
+             cbind(ret1[[2]][,-n1], ret2[[2]]))#
+      }#
+    }#
+  else#
+    function(y, len, pars, t0, idx)#
+      list(rep.int(0, length(len)),#
+           branches(y, len, pars, t0, idx))#
+}#
+#
+make.ode <- function(info, control) {#
+  control <- check.control.ode(control)#
+  info <- check.info.ode(info, control)#
+  backend  <- control$backend#
+  if ( backend == "gslode" )#
+    ode <- make.ode.gslode(info, control)#
+  else if ( backend == "deSolve" )#
+    ode <- make.ode.deSolve(info, control)#
+  else # should have been prevented by now#
+    stop("Invalid backend", backend)#
+  ode#
+}#
+#
+make.branches.dtlik <- function(info, control) {#
+  info     <- check.info.ode(info, control)#
+  comp.idx <- info$idx.d#
+  eps      <- control$eps#
+  ode      <- make.ode(info, control)#
+  branches <- function(y, len, pars, t0, idx)#
+    ode(y, c(t0, t0+len), pars)#
+  make.branches.comp(branches, comp.idx, eps)  #
+}#
+#
+make.all.branches.dtlik <- function(cache, control,#
+                                    initial.conditions) {#
+  branches <- make.branches.dtlik(cache$info, control)#
+  function(pars, intermediates, preset=NULL)#
+    all.branches.matrix(pars, cache, initial.conditions,#
+                        branches, preset)#
+}#
+#
+## Utility functions for organising initial conditions.#
+dt.tips.grouped <- function(y, y.i, cache) {#
+  tips <- cache$tips#
+  t <- cache$len[tips]#
+  if ( !is.list(y) )#
+    stop("'y' must be a list of initial conditions")#
+  if ( max(y.i) > length(y) || min(y.i) < 1 )#
+    stop("'y.i' must be integers on 1..", length(y))#
+  if ( length(y.i) != length(tips) )#
+    stop("y must be same length as tips")#
+  if ( length(y.i) != length(t) )#
+    stop("y must be the same length as t")#
+#
+  if ( any(is.na(y.i)) ) {#
+    k <- cache$info$k#
+    if ( !is.null(k) && !is.na(k) && length(y) == k + 1 )#
+      y.i[is.na(y.i)] <- k + 1#
+    else#
+      stop("Unhandled NA values in state vector")#
+  }#
+#
+  if ( max(abs(cache$depth[tips])) > .Machine$double.eps^0.5 )#
+    stop("This currently only works for ultrametric trees")#
+#
+  types <- sort(unique(y.i))#
+  res <- vector("list", length(types))#
+#
+  for ( i in seq_along(types) ) {#
+    type <- types[i]#
+    j <- which(y.i == type)#
+    ord <- order(t[j])#
+    res[[i]] <- list(y=y[[type]], y.i=i,#
+                     target=tips[j][ord], t=t[j][ord],#
+                     type="GROUPED")#
+  }#
+  res#
+}#
+#
+dt.tips.ordered <- function(y, tips, t) {#
+  i <- order(t)#
+#
+  if ( is.list(y) ) {#
+    if ( length(y) != length(tips) )#
+      stop("y must be same length as tips")#
+    if ( length(y) != length(t) )#
+      stop("y must be the same length as t")#
+    list(target=tips[i],#
+         t=t[i],#
+         y=y[i])#
+  } else if ( is.matrix(y) ) {#
+    if ( ncol(y) != length(tips) )#
+      stop("y must be same length as tips")#
+    if ( ncol(y) != length(t) )#
+      stop("y must be the same length as t")#
+    list(target=tips[i],#
+         t=t[i],#
+         y=y[,i], type="ORDERED")#
+  } else {#
+    stop("y must be a list or matrix")#
+  }#
+}#
+#
+## By the time this hits, unresolved clades and any other non-standard#
+## tips have been removed.  We have an index "tips" (equal to 1:n.tip#
+## for plain bisse) that is the "index" (in phy$edge numbering) of the#
+## tips, and a state vector cache$states, both of the same length.#
+## The length of the terminal branches is cache$len[cache$tips].#
+###
+## Allowing for unknown state tips, there are three possible states#
+##   (0, 1, NA -> 1, 2, 3)#
+## Initial conditions at the tips are given by their tip states:#
+## There are three types of initial condition in bisse:#
+##             E0     E1     D0   D1#
+##   state0: c(1-f_0, 1-f_1, f_0, 0  )#
+##   state1: c(1-f_0, 1-f_1, 0,   f_1)#
+##   state?: c(1-f_0, 1-f_1, f_0, f_1)#
+initial.tip.xxsse <- function(cache, base.zero=FALSE) {#
+  k <- cache$info$k#
+  f <- cache$sampling.f#
+#
+  y <- matrix(rep(c(1-f, rep(0, k)), k + 1), k+1, 2*k, TRUE)#
+  y[k+1,(k+1):(2*k)] <- diag(y[1:k,(k+1):(2*k)]) <- f#
+  y <- matrix.to.list(y)#
+#
+  y.i <- cache$states#
+  if ( base.zero ) # used by bisse and geosse#
+    y.i <- y.i + 1L#
+  y.i[is.na(y.i)] <- k + 1#
+#
+  ## TODO: I may have to drop support for this, or move it elsewhere.#
+  if ( !is.null(multistate <- attr(cache$states, "multistate")) ) {#
+    y.multi <- unique(multistate$states)#
+    y.i.multi <- match(multistate$states, y.multi)#
+#
+    y <- c(y, lapply(y.multi, function(x) c(1-f, x)))#
+    y.i[multistate$i] <- y.i.multi + k + 1#
+  }#
+#
+  dt.tips.grouped(y, y.i, cache)#
+}
+## Checking utilities.  These are things that happen over and over#
+## again, and are tedious to have to write into each function.#
+#
+## Only things that are not model specific should go in this file.  If#
+## the function ends in .xxx where 'xxx' is the name of a model, it#
+## probably belongs in model-xxx.R#
+check.tree <- function(tree, ultrametric=TRUE, bifurcating=TRUE,#
+                       node.labels=FALSE) {#
+  if ( !inherits(tree, "phylo") )#
+    stop("'tree' must be a valid phylo tree")#
+  if ( ultrametric && !is.ultrametric(tree) )#
+    stop("'tree' must be ultrametric")#
+  if ( any(tree$edge.length < 0) )#
+    stop("Negative branch lengths in tree")#
+  ## ape's is.binary.tree() can let a few nasties through - for#
+  ## e.g. each tritomy, an unbranched node and this gets through.#
+  ## This expression is a little stricter, even if a touch slower.#
+  if ( bifurcating && (!is.binary(tree) ||#
+                       any(tabulate(tree$edge[, 1]) == 1)) )#
+    stop("'tree must be bifurcating (no polytomies or unbranched nodes)'")#
+#
+  if ( any(duplicated(tree$tip.label)) )#
+    stop("Tree contains duplicated tip labels")#
+  if ( node.labels ) {#
+    if ( is.null(tree$node.label) )#
+      tree$node.label <- sprintf("nd%d", seq_len(tree$Nnode))#
+    else if ( any(duplicated(tree$node.label)) )#
+      stop("Tree contains duplicated node labels")#
+  }#
+#
+  tree#
+}#
+#
+check.states <- function(tree, states, allow.unnamed=FALSE,#
+                         strict=FALSE, strict.vals=NULL,#
+                         as.integer=TRUE) {#
+  if ( is.matrix(states) ) {#
+    ## Multistate characters (experimental).  This will not work with#
+    ## clade trees, but they are only interesting for BiSSE, which has#
+    ## NA values for multistate (even weight).#
+    if ( inherits(tree, "clade.tree") )#
+      stop("Clade trees won't work with multistate tips yet")#
+    n <- rowSums(states > 0)#
+    if ( any(n == 0) )#
+      stop(sprintf("No state found for taxa: %s",#
+                   paste(names(n)[n == 0], collapse=", ")))#
+#
+    i.mono <- which(n == 1)#
+    i.mult <- which(n >  1)#
+#
+    tmp <- matrix.to.list(states)#
+    names(tmp) <- rownames(states)#
+#
+    states.mult <- lapply(tmp[i.mult], as.numeric)#
+#
+    states <- rep(NA, length(tmp))#
+    names(states) <- names(tmp)#
+    states[i.mono] <- sapply(tmp[i.mono], function(x)#
+                             which(x != 0))#
+#
+    attr(states, "multistate") <- list(i=i.mult, states=states.mult)#
+  }#
+  if ( is.null(names(states)) ) {#
+    if ( allow.unnamed ) {#
+      if ( length(states) == length(tree$tip.label) ) {#
+        names(states) <- tree$tip.label#
+        warning("Assuming states are in tree$tip.label order")#
+      } else {#
+        stop(sprintf("Invalid states length (expected %d)",#
+                     length(tree$tip.label)))#
+      }#
+    } else {#
+      stop("The states vector must contain names")#
+    }#
+  }#
+  if ( !all(tree$tip.label %in% names(states)) )#
+    stop("Not all species have state information")#
+#
+  ## TODO: When multistate characters are present, this may fail even#
+  ## for cases where it should not.#
+  if ( !is.null(strict.vals) ) {#
+    if ( isTRUE(all.equal(strict.vals, 0:1)) )#
+      if ( is.logical(states) )#
+        states[] <- as.integer(states)#
+    if ( strict ) {#
+      if ( !isTRUE(all.equal(sort(strict.vals),#
+                             sort(unique(na.omit(states))))) )#
+        stop("Because strict state checking requested, all (and only) ",#
+             sprintf("states in %s are allowed",#
+                     paste(strict.vals, collapse=", ")))#
+    } else {#
+      extra <- setdiff(sort(unique(na.omit(states))), strict.vals)#
+      if ( length(extra) > 0 )#
+        stop(sprintf("Unknown states %s not allowed in states vector",#
+                     paste(extra, collapse=", ")))#
+    }#
+    if ( as.integer && any(!is.na(states)) )#
+      states <- check.integer(states)#
+  }#
+#
+  if ( inherits(tree, "clade.tree") ) {#
+    spp.clades <- unlist(tree$clades)#
+    if ( !all(spp.clades %in% names(states)) )#
+      stop("Species in 'clades' do not have states information")#
+    states[union(tree$tip.label, spp.clades)]#
+  } else {#
+    ret <- states[tree$tip.label]#
+    ## Ugly hack...#
+    attr(ret, "multistate") <- attr(states, "multistate")#
+    ret#
+  }#
+}#
+#
+check.par.length <- function(x, length) {#
+  if ( length(x) == 1 )#
+    rep(x, length)#
+  else if ( length(x) == length )#
+    x#
+  else#
+    stop(sprintf("'%s' of incorrect length",#
+                 deparse(substitute(x))))#
+}#
+#
+check.sampling.f <- function(sampling.f, n) {#
+  if ( is.null(sampling.f) )#
+    sampling.f <- rep(1, n)#
+  else#
+    sampling.f <- check.par.length(sampling.f, n)#
+#
+  if ( max(sampling.f) > 1 || min(sampling.f) <= 0 )#
+    stop("sampling.f must be on range (0,1]")#
+  sampling.f#
+}#
+#
+check.sampling.f.split <- function(sampling.f, n, n.part) {#
+  if ( is.null(sampling.f) )#
+    rep(list(rep(1, n)), n.part)#
+  else if ( n == 1 && is.numeric(sampling.f) &&#
+           length(sampling.f == n.part) )#
+    check.sampling.f(sampling.f, n.part)#
+  else if ( is.numeric(sampling.f) )#
+    rep(list(check.sampling.f(sampling.f, n)), n.part)#
+  else if ( is.list(sampling.f) )#
+    lapply(sampling.f, check.sampling.f, n)#
+  else#
+    stop("Invalid sampling.f")#
+}#
+#
+check.bounds <- function(lower, upper, x0=NULL) {#
+  if ( !is.null(x0) && (any(x0 < lower) || any(x0 > upper)) )#
+    stop("Starting parameter falls outside of problems bounds")#
+  if ( any(lower >= upper) )#
+    stop("'upper' must be strictly greater than 'lower'")#
+}#
+#
+check.pars.multipart <- function(pars, n.part, n.per) {#
+  if ( is.matrix(pars) ) {#
+    if ( nrow(pars) != n.part )#
+      stop(sprintf("Expected %d parameter sets", n.part))#
+    if ( ncol(pars) != n.per )#
+      stop(sprintf("Expected %d parameters in each set", n.per))#
+    pars <- matrix.to.list(pars)#
+  } else if ( is.list(pars) ) {#
+    if ( length(pars) != n.part )#
+      stop(sprintf("Expected %d parameter sets", n.part))#
+    if ( !all(unlist(lapply(pars, length)) == n.per) )#
+      stop(sprintf("Expected %d parameters in each set", n.per))      #
+  } else {#
+    if ( length(pars) != n.part * n.per )#
+      stop(sprintf("Expected %d parameters", n.part * n.per))#
+    pars <- matrix.to.list(matrix(pars, n.part, n.per, TRUE))#
+  }#
+  pars#
+}#
+#
+## Check that a number can reasonably be considered an integer.#
+check.integer <- function(x) {#
+  if ( is.null(x) )#
+    stop("NULL argument for ", deparse(substitute(x)))#
+  nna <- !is.na(x)#
+  if ( length(x) > 0 && !any(nna) )#
+    stop("No non-NA values for ", deparse(substitute(x)))#
+  if ( length(x) && max(abs(x[nna] - round(x[nna]))) > 1e-8 )#
+    stop("Non-integer argument for ", deparse(substitute(x)))#
+  storage.mode(x) <- "integer"#
+  x#
+}#
+#
+check.scalar <- function(x) {#
+  if ( length(x) != 1 )#
+    stop(deparse(substitute(x)), " must be a scalar")#
+  x#
+}#
+#
+check.control.ode <- function(control=list()) {#
+  defaults <- list(tol=1e-8, backend="gslode",#
+                   eps=0,                  # branch calculations#
+                   gsl.stepper="rkck",     # gslode specific#
+                   safe=TRUE, unsafe=FALSE # deSolve specific#
+                   )#
+  control <- modifyList(defaults, control)#
+#
+  if ( !("compiled" %in% names(control)) )#
+    control$compiled <- control$backend == "gslode"#
+#
+  backends <- c("deSolve", "gslode")#
+  if ( length(control$backend) != 1 )#
+    stop("'backend' must be a single element")#
+  control$backend <- backends[pmatch(control$backend, backends)]#
+  if ( is.na(control$backend) )#
+    stop("Invalid backend selected")#
+#
+  if ( control$compiled && control$backend != "gslode" )#
+    stop("Compiled derivatives (control: compiled=TRUE) only with gslode")#
+#
+  control$tol <- check.scalar(control$tol)#
+  control$eps <- check.scalar(control$eps)#
+  control$safe <- check.scalar(control$safe)#
+#
+  if ( !is.numeric(control$tol) )#
+    stop("control$tol must be numeric")#
+  if ( !is.numeric(control$eps) )#
+    stop("control$eps must be numeric")#
+  if ( !is.logical(control$safe) )#
+    stop("control$eps must be logical")#
+#
+  control#
+}#
+#
+check.loaded.symbol <- function(symbol, dll="") {#
+  if ( !is.loaded(symbol, dll) ) {#
+    msg <- sprintf("Can't find C function %s", symbol)#
+    if ( dll != "" )#
+      sprintf("%s in shared library %s", msg, dll)#
+    stop(msg)#
+  }#
+  TRUE#
+}#
+#
+check.info.ode <- function(info, control) {#
+  ## Might be doubling up here, but good to check.#
+  control <- check.control.ode(control)#
+  model <- if (is.null(info$name.ode)) info$name else info$name.ode#
+  if ( !(is.character(model) && length(model) == 1) )#
+    stop("'model' must be a single string")#
+  info$name.ode <- model#
+  info$ny    <- check.integer(check.scalar(info$ny))#
+  info$np    <- check.integer(check.scalar(info$np))#
+  info$idx.d <- check.integer(info$idx.d)#
+#
+  if ( is.null(info$dll) )#
+    info$dll <- "diversitree"#
+  else if ( !(is.character(info$dll) && length(info$dll)) == 1 )#
+    stop("dll must be a single string")#
+  dll <- info$dll#
+#
+  if ( control$compiled ) {#
+    if ( control$backend != "gslode" )#
+      stop("Only gslode backend supported with compiled code")#
+    check.loaded.symbol(sprintf("derivs_%s_gslode", model), dll)#
+  } else {#
+    if ( !is.function(info$derivs) )#
+      stop("info$derivs must be a function")#
+  }#
+  info#
+}#
+#
+## For almost all models, there there must be a certain number of#
+## finite non-negative parameters.#
+check.pars.nonnegative <- function(pars, npar) {#
+  if ( length(pars) != npar )#
+    stop(sprintf("Incorrect parameter length: expected %d, got %d",#
+                 npar, length(pars)))#
+  if ( any(!is.finite(pars)) || any(pars < 0) )#
+    stop("Parameters must be non-negative and finite")#
+  pars#
+}#
+#
+## Sometimes, it's useful just to check that the numbers look OK#
+## though:#
+check.nonnegative <- function(x, msg=NULL) {#
+  if ( is.null(msg) )#
+    msg <- "Parameters must be non-negative and finite"#
+  if ( any(!is.finite(x)) || any(x < 0)  )#
+    stop(msg)#
+  x#
+}#
+check.nonpositive <- function(x, msg=NULL) {#
+  if ( is.null(msg) )#
+    msg <- "Parameters must be non-positive and finite"#
+  if ( any(!is.finite(x)) || any(x > 0)  )#
+    stop(msg)#
+  x#
+}#
+#
+## Check that a pointer is not NULL.#
+check.ptr <- function(ptr)#
+  .Call(r_check_ptr_not_null, ptr)
+## This is the same as the function in quasse2#
+descendants <- function(node, edge) {#
+  ans <- node#
+  repeat {#
+    node <- edge[edge[,1] %in% node,2]#
+    if ( length(node) > 0 )#
+      ans <- c(ans, node)#
+    else#
+      break#
+  }#
+#
+  unlist(ans)#
+}#
+#
+descendants2 <- function(node, tree) {#
+	n.tip <- length(tree$tip.label)#
+  node <- which(tree$node.label==node) + n.tip#
+  ans <- NULL#
+  repeat {#
+    node <- tree$edge[tree$edge[,1] %in% node,2]#
+    if ( length(node) > 0 )#
+      ans <- c(ans, node)#
+    else#
+      break#
+  }#
+  ans <- ans[ans<=n.tip]#
+  unlist(ans)#
+}#
+#
+descendants.C <- function(node, edge, n.tip) {#
+  storage.mode(edge) <- "integer"#
+  storage.mode(node) <- "integer"#
+  storage.mode(n.tip) <- "integer"#
+  .Call(r_descendants, node, edge, n.tip)#
+}#
+#
+descendants.flag.C <- function(node, edge, n.tip) {#
+  storage.mode(edge) <- "integer"#
+  storage.mode(node) <- "integer"#
+  storage.mode(n.tip) <- "integer"#
+  .Call(r_descendants_flag, node, edge, n.tip)#
+}#
+#
+descendants.idx.C <- function(node, edge, n.tip) {#
+  storage.mode(edge) <- "integer"#
+  storage.mode(node) <- "integer"#
+  storage.mode(n.tip) <- "integer"#
+  .Call(r_descendants_idx, node, edge, n.tip)#
+}#
+#
+get.children <- function(edge, n.tip) {#
+  ## To construct the children vector, this is what I used to do:#
+  ##   lapply(idx[!is.tip], function(x) edge[edge[,1] == x,2])#
+  ## But this is slow for large trees.  This is faster:#
+  ## children <- split(edge[,2], edge[,1])#
+  ## Surprisingly, most of the time is in coercing edge[,1] into a#
+  ## factor.#
+  x <- as.integer(edge[,1])#
+  levels <- as.integer((n.tip+1):max(edge[,1]))#
+  f <- match(x, levels)#
+  levels(f) <- as.character(levels)#
+  class(f) <- "factor"#
+  children <- split(edge[,2], f)#
+  names(children) <- NULL#
+#
+  ## In most cases, this will have been checked by check.tree()#
+  ## This is currently the time sink here.#
+  if ( !all(unlist(lapply(children, length)) == 2) )#
+    stop("Multifircations/unbranched nodes in tree - best get rid of them")#
+#
+  rbind(matrix(NA, n.tip, 2), t(matrix(unlist(children), 2)))#
+}#
+#
+ancestors <- function(phy, i=seq_along(phy$tip.label)) {#
+  anc <- i#
+  edge <- phy$edge#
+  while ( any(!is.na(i)) ) {#
+    i <- edge[match(i, edge[,2]),1]#
+    anc <- cbind(anc, i, deparse.level=0)#
+  }#
+#
+  apply(anc, 1, function(x)#
+        c(rev(x[!is.na(x)]), rep(NA, sum(is.na(x)))))#
+}#
+#
+## Compute the MRCA of tips with indices in 'tips'#
+mrca.tipset <- function(phy, tips) {#
+  if ( is.character(tips) )#
+    tips <- match(tips, phy$tip.label)#
+  if ( length(tips) == 1 )#
+    tips#
+  else {#
+    anc <- ancestors(phy, tips)#
+    j <- which(apply(anc, 1, function(x) length(unique(x))) > 1)[1]#
+    anc[j-1,1]#
+  }#
+}#
+#
+## Similar to ape's branching.times(), but returns the height above#
+## the root node, even for non-ultrametric trees.  Includes tip times.#
+branching.heights <- function(phy) {#
+  if (!inherits(phy, "phylo"))#
+    stop('object "phy" is not of class "phylo"')#
+  phy <- reorder(phy, "cladewise")#
+#
+  edge <- phy$edge#
+  n.node <- phy$Nnode#
+  n.tip <- length(phy$tip.label)#
+#
+  ht <- numeric(n.node + n.tip) # zero'd#
+  for (i in seq_len(nrow(edge)))#
+    ht[edge[i, 2]] <- ht[edge[i, 1]] + phy$edge.length[i]#
+#
+  ## Ugly, but fairly compatible with branching.times()#
+  names.node <- phy$node.label#
+  if (is.null(names.node))#
+    names.node <- (n.tip + 1):(n.tip + n.node)#
+  names(ht) <- c(phy$tip.label, names.node)#
+#
+  ht#
+}#
+#
+## This only works for ultrametric trees:#
+branching.depth <- function(len, children, order, tips) {#
+  depth <- numeric(nrow(children))#
+  depth[tips] <- 0#
+  for ( i in order )#
+    depth[i] <- depth[children[i,1]] + len[children[i,1]]#
+  depth#
+}#
+#
+get.descendants <- function(node, tree, tips.only=FALSE,#
+                            edge.index=FALSE) {#
+  n.tip <- length(tree$tip.label)#
+  if ( length(node) != 1 )#
+    stop("'node' must be scalar")#
+  if ( is.character(node) ) {#
+    node <- match(node, tree$node.label) + n.tip#
+    if ( is.na(node) )#
+      stop(sprintf("Node '%s' not found in tree"), node)#
+  } else {#
+    node <- check.integer(node)#
+    if ( node >= 1 && node < tree$Nnode ) # on 1..(n.node), probably#
+      node <- node + n.tip#
+    else if ( !(node > n.tip && node <= n.tip + tree$Nnode) )#
+      stop("Invalid node number")#
+  }#
+  edge <- tree$edge#
+#
+  desc <- descendants.C(node, edge, n.tip)#
+  if ( tips.only )#
+    desc <- desc[desc <= n.tip]#
+  if ( edge.index )#
+    desc <- match(desc, edge[,2])#
+  desc#
+}
+control.fft <- list(tc=1.3,#
+  				   dt.max=0.01,#
+                   nx=1024,#
+                   dx=10^-4,#
+                   r=4L,#
+                   w=5,#
+                   method="fftR",#
+                   flags=0L, # fftC only#
+                   atol=1e-6, # mol only#
+                   rtol=1e-6, # mol only#
+                   eps=1e-6,  # perhaps scale with dx?#
+                   verbose=0L,#
+                   ntypes=4L)#
+#
+lambda <- sigmoid.x#
+mu <- constant.x#
+diffusion <- 0.001#
+sd <- 0.001#
+#
+##test pde solver on a single branch#
+len <- 2 # Integrate down a branch length of 2#
+#
+Q <- t(matrix(c(-0.5,0.2,0.1,0.1,#
+				0.1,-0.8,0.3,0.4,#
+				0.2,0.2,-0.6,0.2,#
+				0.3,0.4,0.2,-0.7),4,4))
+drift=1
+drift=0.01
+args <- list(lambda=1:4, mu=5, drift=6, diffusion=7)#
+  pars <- c(0, 0.1, 0.1, 0.01, 0.01, drift, diffusion)#
+#
+  cache <- list(args=args,control=control.fft,lambda=lambda,mu=mu,Q=Q)#
+  f.pars <- make.pars.mosse(cache)#
+  pars.fft <- f.pars(pars)#
+#
+  ## Initial conditions:#
+  vars.fft <- matrix(0, control.fft$nx, 5)#
+  vars.fft[seq_len(pars.fft$lo$ndat),2] <- dnorm(pars.fft$lo$x, 0.1, sd)#
+  vars.hi.fft <- matrix(0, control.fft$nx*control.fft$r, 5)#
+  vars.hi.fft[seq_len(pars.fft$hi$ndat),2] <-#
+    dnorm(pars.fft$hi$x, 0.1, sd)#
+  ##run fftR#
+  pde.fftR <- with(control.fft, make.pde.mosse.fftR(nx, dx*r, dt.max, 5L))#
+  ans.fftR <- pde.fftR(vars.fft, len, pars.fft$lo, 0, control.fft$dt.max)
+make.branches.quasse.fftR <- function(control) {#
+  nx <- control$nx#
+  dx <- control$dx#
+  r <- control$r#
+  dt.max <- control$dt.max#
+  tc <- control$tc#
+#
+  f.hi <- make.pde.quasse.fftR(nx*r, dx/r, dt.max, 2L)#
+  f.lo <- make.pde.quasse.fftR(nx,   dx,   dt.max, 2L)#
+  combine.branches.quasse(f.hi, f.lo, control)#
+}#
+#
+make.pde.quasse.fftR <- function(nx, dx, dt.max, nd) {#
+  function(y, len, pars, t0) {#
+    padding <- pars$padding#
+    ndat <- length(pars$lambda)#
+    nt <- as.integer(ceiling(len / dt.max))#
+    dt <- len / nt#
+    if ( !(length(y) %in% (nd * nx)) )#
+      stop("Wrong size y")#
+    if ( length(pars$lambda) != length(pars$mu) ||#
+         length(pars$lambda) > (nx-3) )#
+      stop("Incorrect length pars")#
+    if ( pars$diffusion <= 0 )#
+      stop("Invalid diffusion parameter")#
+#
+    if ( !is.matrix(y) )#
+      y <- matrix(y, nx, nd)#
+#
+    ans <- quasse.integrate.fftR(y, pars$lambda, pars$mu, pars$drift,#
+                                 pars$diffusion, nt, dt, nx, ndat, dx,#
+                                 padding[1], padding[2])#
+    ## Do the log compensation here, to make the careful calcuations#
+    ## easier later.#
+    q <- sum(ans[,2]) * dx#
+    ans[,2] <- ans[,2] / q#
+    list(log(q), ans)#
+  }#
+}#
+#
+## Note that the sign of drift here needs inverting.  (see#
+## src/quasse-eqs-fftC.c:qf_setup_kern() for the equivalent flip).#
+quasse.integrate.fftR <- function(vars, lambda, mu, drift, diffusion,#
+                                  nstep, dt, nx, ndat, dx, nkl, nkr) {#
+  kern <- fftR.make.kern(-dt * drift, sqrt(dt * diffusion),#
+                         nx, dx, nkl, nkr)#
+  fy <- fft(kern)  #
+  for ( i in seq_len(nstep) ) {#
+    vars <- fftR.propagate.t(vars, lambda, mu, dt, ndat)#
+    vars <- fftR.propagate.x(vars, nx, fy, nkl, nkr)#
+  }#
+  vars#
+}#
+#
+fftR.make.kern <- function(mean, sd, nx, dx, nkl, nkr) {#
+  kern <- rep(0, nx)#
+  xkern <- (-nkl:nkr)*dx#
+  ikern <- c((nx - nkl + 1):nx, 1:(nkr + 1))#
+  kern[ikern] <- normalise(dnorm(xkern, mean, sd))#
+  kern#
+}#
+#
+fftR.propagate.t <- function(vars, lambda, mu, dt, ndat) {#
+  i <- seq_len(ndat)#
+  r <- lambda - mu#
+  z <- exp(dt * r)#
+  e0 <- vars[i,1]#
+  d0 <- vars[i,-1]#
+  vars[i,1] <- (mu + z*(e0 - 1)*mu - lambda*e0) /#
+    (mu + z*(e0 - 1)*lambda - lambda*e0)#
+  dd <- (z * r * r)/(z * lambda - mu + (1-z)*lambda*e0)^2#
+  vars[i,-1] <- dd * d0#
+  vars#
+}#
+#
+fftR.propagate.x <- function(vars, nx, fy, nkl, nkr) {#
+  ifft <- function(x) fft(x, inverse=TRUE)#
+  f <- function(z, fy, n) {#
+    nx <- length(z)#
+    for ( i in seq_len(n) )#
+      z <- Re(ifft(fft(z) * fy))/nx#
+    z#
+  }#
+  vars.out <- Re(apply(apply(vars, 2, fft) * fy, 2, ifft))/nx#
+  ndat <- nx - (nkl + 1 + nkr)#
+  i.prev.l <- 1:nkl#
+  i.prev.r <- (ndat-nkr+1):ndat#
+  i.zero <- (ndat+1):nx#
+  vars.out[c(i.prev.l, i.prev.r),] <- vars[c(i.prev.l, i.prev.r),]#
+  vars.out[i.zero,] <- 0#
+  vars.out[vars.out < 0] <- 0#
+  vars.out#
+}
+ans.fftR <- pde.fftR(vars.fft, len, pars.fft$lo, 0, control.fft$dt.max)
+ans.fftR
+branches.fftR <- make.branches.mosse.fftR(control.fft)#
+  ans.b.fftR <- branches.fftR(as.numeric(vars.hi.fft), len, pars.fft, 0)
+drift
+pars
+args <- list(lambda=1:4, mu=5, drift=6, diffusion=7)#
+  pars <- c(0, 0.1, 0.1, 0.01, 0.01, drift, diffusion)#
+#
+  cache <- list(args=args,control=control.fft,lambda=lambda,mu=mu,Q=Q)#
+  f.pars <- make.pars.mosse(cache)#
+  pars.fft <- f.pars(pars)#
+#
+  ## Initial conditions:#
+  vars.fft <- matrix(0, control.fft$nx, 5)#
+  vars.fft[seq_len(pars.fft$lo$ndat),2] <- dnorm(pars.fft$lo$x, 0.1, sd)#
+  vars.hi.fft <- matrix(0, control.fft$nx*control.fft$r, 5)#
+  vars.hi.fft[seq_len(pars.fft$hi$ndat),2] <-#
+    dnorm(pars.fft$hi$x, 0.1, sd)#
+  ##run fftR#
+  pde.fftR <- with(control.fft, make.pde.mosse.fftR(nx, dx*r, dt.max, 5L))#
+  ans.fftR <- pde.fftR(vars.fft, len, pars.fft$lo, 0, control.fft$dt.max)#
+  branches.fftR <- make.branches.mosse.fftR(control.fft)#
+  ans.b.fftR <- branches.fftR(as.numeric(vars.hi.fft), len, pars.fft, 0)
+ans.b.fftR
+make.pars.mosse <- diversitree:::make.pars.mosse#
+make.pde.mosse.fftC <- diversitree:::make.pde.mosse.fftC#
+make.pde.mosse.fftR <- diversitree:::make.pde.mosse.fftR#
+#
+make.branches.mosse.fftC <- diversitree:::make.branches.mosse.fftC#
+make.branches.mosse.fftR <- diversitree:::make.branches.mosse.fftR#
+#
+## Basic control list.#
+control.fft <- list(tc=1.3,#
+  				   dt.max=0.01,#
+                   nx=1024,#
+                   dx=10^-4,#
+                   r=4L,#
+                   w=5,#
+                   method="fftR",#
+                   flags=0L, # fftC only#
+                   atol=1e-6, # mol only#
+                   rtol=1e-6, # mol only#
+                   eps=1e-6,  # perhaps scale with dx?#
+                   verbose=0L,#
+                   ntypes=4L)#
+#
+lambda <- sigmoid.x#
+mu <- constant.x#
+diffusion <- 0.001#
+sd <- 0.001#
+#
+##test pde solver on a single branch#
+len <- 2 # Integrate down a branch length of 2#
+#
+Q <- t(matrix(c(-0.5,0.2,0.1,0.1,#
+				0.1,-0.8,0.3,0.4,#
+				0.2,0.2,-0.6,0.2,#
+				0.3,0.4,0.2,-0.7),4,4))
+drift=0.01
+args <- list(lambda=1:4, mu=5, drift=6, diffusion=7)#
+  pars <- c(0, 0.1, 0.1, 0.01, 0.01, drift, diffusion)#
+#
+  cache <- list(args=args,control=control.fft,lambda=lambda,mu=mu,Q=Q)#
+  f.pars <- make.pars.mosse(cache)#
+  pars.fft <- f.pars(pars)#
+#
+  ## Initial conditions:#
+  vars.fft <- matrix(0, control.fft$nx, 5)#
+  vars.fft[seq_len(pars.fft$lo$ndat),2] <- dnorm(pars.fft$lo$x, 0.1, sd)#
+  vars.hi.fft <- matrix(0, control.fft$nx*control.fft$r, 5)#
+  vars.hi.fft[seq_len(pars.fft$hi$ndat),2] <-#
+    dnorm(pars.fft$hi$x, 0.1, sd)#
+  ##run fftR#
+  pde.fftR <- with(control.fft, make.pde.mosse.fftR(nx, dx*r, dt.max, 5L))#
+  ans.fftR <- pde.fftR(vars.fft, len, pars.fft$lo, 0, control.fft$dt.max)#
+  branches.fftR <- make.branches.mosse.fftR(control.fft)#
+  ans.b.fftR <- branches.fftR(as.numeric(vars.hi.fft), len, pars.fft, 0)
+expect_that(ans.b.fftC, equals(ans.b.fftR))
+pde.fftC <- with(control.fft, make.pde.mosse.fftC(nx, dx*r, dt.max, 5L, flags))#
+  ans.fftC <- pde.fftC(vars.fft, len, pars.fft$lo, 0, control.fft$dt.max)#
+  branches.fftC <- make.branches.mosse.fftC(control.fft)#
+  ans.b.fftC <- branches.fftC(as.numeric(vars.hi.fft), len, pars.fft, 0)
+ans.b.fftC
+ans.b.fftC[1]
+ans.b.fftR[1]
+ans.fftC
+ans.fftC[1]
+ans.fftR[1]
+drift=0
+args <- list(lambda=1:4, mu=5, drift=6, diffusion=7)#
+  pars <- c(0, 0.1, 0.1, 0.01, 0.01, drift, diffusion)#
+#
+  cache <- list(args=args,control=control.fft,lambda=lambda,mu=mu,Q=Q)#
+  f.pars <- make.pars.mosse(cache)#
+  pars.fft <- f.pars(pars)#
+#
+  ## Initial conditions:#
+  vars.fft <- matrix(0, control.fft$nx, 5)#
+  vars.fft[seq_len(pars.fft$lo$ndat),2] <- dnorm(pars.fft$lo$x, 0.1, sd)#
+  vars.hi.fft <- matrix(0, control.fft$nx*control.fft$r, 5)#
+  vars.hi.fft[seq_len(pars.fft$hi$ndat),2] <-#
+    dnorm(pars.fft$hi$x, 0.1, sd)#
+  ##run fftR#
+  pde.fftR <- with(control.fft, make.pde.mosse.fftR(nx, dx*r, dt.max, 5L))#
+  ans.fftR <- pde.fftR(vars.fft, len, pars.fft$lo, 0, control.fft$dt.max)#
+  branches.fftR <- make.branches.mosse.fftR(control.fft)#
+  ans.b.fftR <- branches.fftR(as.numeric(vars.hi.fft), len, pars.fft, 0)
+ans.b.fftR[1]
+make.pars.mosse <- diversitree:::make.pars.mosse#
+make.pde.mosse.fftC <- diversitree:::make.pde.mosse.fftC#
+make.pde.mosse.fftR <- diversitree:::make.pde.mosse.fftR#
+#
+make.branches.mosse.fftC <- diversitree:::make.branches.mosse.fftC#
+make.branches.mosse.fftR <- diversitree:::make.branches.mosse.fftR#
+#
+## Basic control list.#
+control.fft <- list(tc=1.3,#
+  				   dt.max=0.01,#
+                   nx=1024,#
+                   dx=10^-4,#
+                   r=4L,#
+                   w=5,#
+                   method="fftR",#
+                   flags=0L, # fftC only#
+                   atol=1e-6, # mol only#
+                   rtol=1e-6, # mol only#
+                   eps=1e-6,  # perhaps scale with dx?#
+                   verbose=0L,#
+                   ntypes=4L)#
+#
+lambda <- sigmoid.x#
+mu <- constant.x#
+diffusion <- 0.001#
+sd <- 0.001#
+#
+##test pde solver on a single branch#
+len <- 2 # Integrate down a branch length of 2#
+#
+Q <- t(matrix(c(-0.5,0.2,0.1,0.1,#
+				0.1,-0.8,0.3,0.4,#
+				0.2,0.2,-0.6,0.2,#
+				0.3,0.4,0.2,-0.7),4,4))
+drift
+args <- list(lambda=1:4, mu=5, drift=6, diffusion=7)#
+  pars <- c(0, 0.1, 0.1, 0.01, 0.01, drift, diffusion)#
+#
+  cache <- list(args=args,control=control.fft,lambda=lambda,mu=mu,Q=Q)#
+  f.pars <- make.pars.mosse(cache)#
+  pars.fft <- f.pars(pars)#
+#
+  ## Initial conditions:#
+  vars.fft <- matrix(0, control.fft$nx, 5)#
+  vars.fft[seq_len(pars.fft$lo$ndat),2] <- dnorm(pars.fft$lo$x, 0.1, sd)#
+  vars.hi.fft <- matrix(0, control.fft$nx*control.fft$r, 5)#
+  vars.hi.fft[seq_len(pars.fft$hi$ndat),2] <-#
+    dnorm(pars.fft$hi$x, 0.1, sd)#
+  ##run fftR#
+  pde.fftR <- with(control.fft, make.pde.mosse.fftR(nx, dx*r, dt.max, 5L))#
+  ans.fftR <- pde.fftR(vars.fft, len, pars.fft$lo, 0, control.fft$dt.max)
+ans.fftR[1]
+ans.fftR
+branches.fftR <- make.branches.mosse.fftR(control.fft)#
+  ans.b.fftR <- branches.fftR(as.numeric(vars.hi.fft), len, pars.fft, 0)
+ans.b.fftR

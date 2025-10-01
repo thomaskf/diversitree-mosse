@@ -1,0 +1,19 @@
+Package: diversitree
+Version: 0.10
+Title: Comparative 'Phylogenetic' Analyses of Diversification
+Authors@R: c(person("Richard G.", "FitzJohn", role = c("aut", "cre"),
+    email = "rich.fitzjohn@gmail.com"),
+    person("Emma", "Goldberg", role = "aut"),
+    person("Karen", "Magnuson-Ford", role = "aut"),
+    person("Roger", "Sidje", role = "aut"))
+Depends: R (>= 2.10), methods, ape
+Imports: deSolve (>= 1.7), graphics, grDevices, stats, subplex, Rcpp
+        (>= 0.10.0)
+Suggests: numDeriv, minqa, lubridate, expm, caper, geiger
+LinkingTo: Rcpp
+RcppModules: diversitree
+SystemRequirements: fftw3 (>= 3.1.2), gsl (>= 1.15)
+License: GPL (>= 2)
+URL: http://www.zoology.ubc.ca/prog/diversitree
+LazyData: true
+NeedsCompilation: yes
