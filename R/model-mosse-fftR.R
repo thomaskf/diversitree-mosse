@@ -99,9 +99,9 @@ combine.branches.mosse <- function(f.hi, f.lo, control) {
     lq0 <- log(q0)
     
     # show the non-zero values of y
-    yidx <- which(y > 0, arr.ind = TRUE)
-    yresults <- cbind(yidx, value = y[yidx])
-    print(yresults)
+    # yidx <- which(y > 0, arr.ind = TRUE)
+    # yresults <- cbind(yidx, value = y[yidx])
+    # print(yresults)
 
     if ( t0 >= tc ) {
       ans <- f.lo(y, len, pars$lo, t0, dt.max)
