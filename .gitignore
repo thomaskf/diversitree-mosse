@@ -1,0 +1,33 @@
+# Ignore macOS junk
+.DS_Store
+__MACOSX/
+
+# Ignore build artifacts
+/build/
+/dist/
+/out/
+
+# Ignore log files
+*.log
+
+# Ignore Python cache
+__pycache__/
+*.pyc
+
+# Ignore VSCode settings
+.vscode/
+
+# Ignore all .env files
+*.env
+
+# Ignore all .o files
+*.o
+
+# Ignore more files
+*.swp
+config.status
+*.gz
+run.sh
+src/config.h
+src/diversitree.so
+src/Makevars
