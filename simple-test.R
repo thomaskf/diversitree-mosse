@@ -17,12 +17,6 @@ names(states) <- phy$tip.label
 states.sd <- rep(0.01,length(phy$tip.label))
 names(states.sd) <- phy$tip.label
 
-# not normalized
-# Q <- t(matrix(c(-3/4,1/4,1/4,1/4,
-#                1/4,-3/4,1/4,1/4,
-#                1/4,1/4,-3/4,1/4,
-#                1/4,1/4,1/4,-3/4),4,4))
-
 Q <- t(matrix(c(-1,1/3,1/3,1/3,
                 1/3,-1,1/3,1/3,
                 1/3,1/3,-1,1/3,
