@@ -182,25 +182,56 @@ make.initial.conditions.mosse <- function(control) {
 ## which is enforced by the checking.
 make.rootfunc.mosse <- function(cache) {
   root.idx <- cache$root
-  nx <- cache$control$nx
-  dx <- cache$control$dx * cache$control$r
+  nx <- cache$control$nx * cache$control$r
+  dx <- cache$control$dx 
+  # nx <- cache$control$nx
+  # dx <- cache$control$dx * cache$control$r
   ntypes <- cache$control$ntypes
   Q <- cache$Q
   
   function(res, pars, condition.surv, root, root.f, ntypes) {
-    vals <- matrix(res$vals, nx, (ntypes+1))[seq_len(pars$lo$ndat),]
+
+    # change to high (for debugging purpose)
+    vals <- matrix(res$vals, nx, (ntypes+1))[seq_len(pars$hi$ndat),]
+    # vals <- matrix(res$vals, nx, (ntypes+1))[seq_len(pars$lo$ndat),]
+    
+    message("vals[1,]", capture.output(vals[1,]));
+    message("vals[2,]", capture.output(vals[2,]));
+    message("vals[3,]", capture.output(vals[3,]));
+    message("vals[4,]", capture.output(vals[4,]));
+    message("vals[5,]", capture.output(vals[5,]));
+    
     lq <- res$lq
 
     d.root <- vals[,-1]
-	root.p <- root.p.mosse(d.root, pars$lo, root, root.f, ntypes)
-	
+    
+    message("d.root[1,]", capture.output(d.root[1,]));
+    message("d.root[2,]", capture.output(d.root[2,]));
+    message("d.root[3,]", capture.output(d.root[3,]));
+    message("d.root[4,]", capture.output(d.root[4,]));
+    message("d.root[5,]", capture.output(d.root[5,]));
+    
+    # change to high (for debugging purpose)
+	  # root.p <- root.p.mosse(d.root, pars$lo, root, root.f, ntypes)
+    root.p <- root.p.mosse(d.root, pars$hi, root, root.f, ntypes)
+    
+    message("condition.surv:", capture.output(condition.surv));
+    
     if ( condition.surv ) {
-      lambda <- pars$lo$lambda
+      # change to high (for debugging purpose)
+      lambda <- pars$hi$lambda
+      # lambda <- pars$lo$lambda
       e.root <- vals[,1]
       d.root <- mapply(function (i) d.root[,i] / (lambda * (1 - e.root)^2), 1:ntypes)
     }
     
-    log(sum(root.p * d.root) * dx) + sum(lq)
+    message("2 d.root[1,]", capture.output(d.root[1,]));
+    message("2 d.root[2,]", capture.output(d.root[2,]));
+    message("2 d.root[3,]", capture.output(d.root[3,]));
+    message("2 d.root[4,]", capture.output(d.root[4,]));
+    message("2 d.root[5,]", capture.output(d.root[5,]));
+
+        log(sum(root.p * d.root) * dx) + sum(lq)
   }
 }
 
@@ -210,19 +241,32 @@ root.p.mosse <- function(d.root, pars, root, root.f, ntypes) {
   
   x <- pars$x
   dx <- x[2] - x[1]
+  
+  message("pars$nx:", capture.output(pars$nx));
+  message("ntypes:", capture.output(ntypes));
+  message("dx:", capture.output(dx));
+  message("d.root:", capture.output(d.root));
 
   if ( root == ROOT.FLAT ) {
+    message("root == ROOT.FLAT");
     p <- 1 / ((pars$nx-1) * ntypes * dx)
   } else if ( root == ROOT.OBS )  {
+    message("root == ROOT.OBS");
     p <- d.root / (sum(d.root) * dx)
   } else {
-  	root.i <- solve(t(cbind(c(1,1,1,1),pars$Q_orig[,-1])),c(1,0,0,0))
+    root.i <- solve(t(cbind(c(1,1,1,1),pars$Q_orig[,-1])),c(1,0,0,0))
+    message("root.i:", capture.output(root.i));
   	if ( root == ROOT.EQUI ) {
-    	p <- mapply(function (i) root.i[i] * d.root[,i] / (sum(d.root[,i]) * dx), 1:ntypes)
+  	  message("root == ROOT.EQUI");
+  	  p <- mapply(function (i) root.i[i] * d.root[,i] / (sum(d.root[,i]) * dx), 1:ntypes)
     } else if ( root == ROOT.GIVEN ){
-    	p <- mapply(function (i) root.i[i] * root.f(x), 1:ntypes)
+      message("root == ROOT.GIVEN");
+      p <- mapply(function (i) root.i[i] * root.f(x), 1:ntypes)
     }    	
   }
+  
+  message("p", capture.output(p));
+  
   p
 }
 
