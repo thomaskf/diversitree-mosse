@@ -222,6 +222,8 @@ make.rootfunc.mosse <- function(cache) {
       lambda <- pars$hi$lambda
       # lambda <- pars$lo$lambda
       e.root <- vals[,1]
+      message("e.root", capture.output(e.root[1:6]));
+      message("lambda's length", capture.output(length(lambda)))
       d.root <- mapply(function (i) d.root[,i] / (lambda * (1 - e.root)^2), 1:ntypes)
     }
     
@@ -230,6 +232,11 @@ make.rootfunc.mosse <- function(cache) {
     message("2 d.root[3,]", capture.output(d.root[3,]));
     message("2 d.root[4,]", capture.output(d.root[4,]));
     message("2 d.root[5,]", capture.output(d.root[5,]));
+    
+    message("dx", capture.output(dx));
+    a <- log(sum(root.p * d.root) * dx)
+    message("a", capture.output(a));
+    message("lq", capture.output(lq));
 
         log(sum(root.p * d.root) * dx) + sum(lq)
   }
