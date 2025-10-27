@@ -105,6 +105,9 @@ combine.branches.mosse <- function(f.hi, f.lo, control) {
     } else {
       len.hi <- tc - t0
       ans.hi <- f.hi(y, len.hi, pars$hi, t0, dt.max)
+      message("len.hi = ", capture.output(len.hi))
+      message("length(pars$tr) = ", capture.output(length(pars$tr)))
+      message("pars$tr[1:5] = ", capture.output(pars$tr[1:5]))
       
       y.lo <- ans.hi[[2]][pars$tr,]
       lq0 <- lq0 + ans.hi[[1]]
@@ -112,6 +115,7 @@ combine.branches.mosse <- function(f.hi, f.lo, control) {
         y.lo <- rbind(y.lo, matrix(0, nx - length(pars$tr),nd))
         
       ## Fininshing up with the low resolution branch...
+      message("len - len.hi = ", capture.output(len - len.hi))
       ans <- f.lo(y.lo, len - len.hi, pars$lo, tc, dt.max)
     }
 

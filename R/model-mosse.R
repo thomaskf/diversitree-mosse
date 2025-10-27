@@ -259,7 +259,7 @@ mosse.extent <- function(control, drift, diffusion) {
   dt <- control$dt.max
   r  <- control$r
   w <- control$w
-
+  
   mean <- drift * dt
   sd   <- sqrt(diffusion * dt)
 
@@ -269,6 +269,17 @@ mosse.extent <- function(control, drift, diffusion) {
   nkr <- ceiling( (mean + w * sd)/dx/r) * c(r,1)
   ndat <- nx*c(r, 1) - (nkl + 1 + nkr)
 
+  message("mean = ", capture.output(mean))
+  message("sd = ", capture.output(sd))
+  message("nx = ", capture.output(nx))
+  message("dx = ", capture.output(dx))
+  message("dt = ", capture.output(dt))
+  message("r = ", capture.output(r))
+  message("w = ", capture.output(w))
+  message("nkl = ", capture.output(nkl));
+  message("nkr = ", capture.output(nkr));
+  message("ndat = ", capture.output(ndat));
+  
   padding <- cbind(nkl, nkr)
   storage.mode(padding) <- "integer"
 
@@ -285,7 +296,10 @@ mosse.extent <- function(control, drift, diffusion) {
 ##check control
 check.control.mosse <- function(control, tree, states) {
   tree.length <- max(branching.times(tree))
-  defaults <- list(tc=tree.length/10,
+  
+  message("tree.length = ", capture.output(tree.length))
+  
+  defaults <- list(tc=tree.length/2, # tree.length/10,
   				   dt.max=0.01,
                    nx=1024,
                    dx=10^(-(control$xmax+3)),

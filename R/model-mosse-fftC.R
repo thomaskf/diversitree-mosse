@@ -18,6 +18,13 @@ make.branches.mosse.fftC <- function(control) {
 }
 
 make.pde.mosse.fftC <- function(nx, dx, dt.max, nd, flags) {
+  
+  message(".")
+  message("nx = ", capture.output(nx))
+  message("dx = ", capture.output(dx))
+  message("nd = ", capture.output(nd))
+  message("flags = ", capture.output(flags))
+  
   ptr <- .Call(r_make_mosse_fft, as.integer(nx), as.numeric(dx),
                as.integer(nd), as.integer(flags))
   function(y, len, pars, t0, dt.max) {
@@ -31,6 +38,20 @@ make.pde.mosse.fftC <- function(nx, dx, dt.max, nd, flags) {
       stop("Incorrect length pars")
     if ( pars$diffusion <= 0 )
       stop("Invalid diffusion parameter")
+    
+    message(".")
+    message("length(y) = ", capture.output(length(y)))
+    message("y[1:5] = ", capture.output(y[1:5]))
+    message("length(pars$lambda) = ", capture.output(length(pars$lambda)))
+    message("pars$lambda[1:5] = ", capture.output(pars$lambda[1:5]))
+    message("length(pars$mu) = ", capture.output(length(pars$mu)))
+    message("pars$mu[1:5] = ", capture.output(pars$mu[1:5]))
+    message("pars$drift = ", capture.output(pars$drift))
+    message("pars$diffusion = ", capture.output(pars$diffusion))
+    message("length(pars$Q) = ", capture.output(length(pars$Q)))
+    message("nt = ", capture.output(nt))
+    message("dt.max = ", capture.output(dt.max))
+    message("pars$padding = ", capture.output(pars$padding))
     
     ans <- .Call(r_do_integrate_mosse,
                  ptr, y, pars$lambda, pars$mu,
