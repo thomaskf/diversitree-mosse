@@ -41,7 +41,16 @@ make.pde.mosse.fftC <- function(nx, dx, dt.max, nd, flags) {
     
     message(".")
     message("length(y) = ", capture.output(length(y)))
+    x <- length(y)/5
     message("y[1:5] = ", capture.output(y[1:5]))
+    s <- x+1; t <- x+5;
+    message("y[", s, ":", t , "] = ", capture.output(y[s:t]))
+    s <- 2*x+1; t <- 2*x+5;
+    message("y[", s, ":", t , "] = ", capture.output(y[s:t]))
+    s <- 3*x+1; t <- 3*x+5;
+    message("y[", s, ":", t , "] = ", capture.output(y[s:t]))
+    s <- 4*x+1; t <- 4*x+5;
+    message("y[", s, ":", t , "] = ", capture.output(y[s:t]))
     message("length(pars$lambda) = ", capture.output(length(pars$lambda)))
     message("pars$lambda[1:5] = ", capture.output(pars$lambda[1:5]))
     message("length(pars$mu) = ", capture.output(length(pars$mu)))
