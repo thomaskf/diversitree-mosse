@@ -33,7 +33,7 @@ make.pde.mosse.fftR <- function(nx, dx, dt.max, nd) {
                                  padding[1], padding[2])
     ## Do the log compensation here, to make the careful calcuations
     ## easier later.
-    q <- sum(ans[,-1]) * dx
+    q <- sum(ans[,-1])
     ans[,-1] <- ans[,-1] / q
     list(log(q), ans)
   }

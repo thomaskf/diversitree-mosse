@@ -40,7 +40,7 @@ make.pde.mosse.fftC <- function(nx, dx, dt.max, nd, flags) {
     ## Do the log compensation here, to make the careful calcuations
     ## easier later.
     if ( ncol(ans) > 1 ) {
-      q <- sum(ans[,-1]) * dx
+      q <- sum(ans[,-1])
       ans[,-1] <- ans[,-1] / q
       list(log(q), ans)
     } else {
