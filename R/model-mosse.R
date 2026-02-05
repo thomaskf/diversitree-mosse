@@ -182,7 +182,7 @@ make.rootfunc.mosse <- function(cache) {
       d.root <- mapply(function (i) d.root[,i] / (lambda * (1 - e.root)^2), 1:ntypes)
     }
     
-    log(sum(root.p * d.root) * dx) + sum(lq)
+    log(sum(root.p * d.root)) + sum(lq)
   }
 }
 
@@ -194,13 +194,13 @@ root.p.mosse <- function(d.root, pars, root, root.f, ntypes) {
   dx <- x[2] - x[1]
 
   if ( root == ROOT.FLAT ) {
-    p <- 1 / ((pars$nx-1) * ntypes * dx)
+    p <- 1 / ((pars$nx-1) * ntypes)
   } else if ( root == ROOT.OBS )  {
-    p <- d.root / (sum(d.root) * dx)
+    p <- d.root / (sum(d.root))
   } else {
   	root.i <- solve(t(cbind(c(1,1,1,1),pars$Q_orig[,-1])),c(1,0,0,0))
   	if ( root == ROOT.EQUI ) {
-    	p <- mapply(function (i) root.i[i] * d.root[,i] / (sum(d.root[,i]) * dx), 1:ntypes)
+    	p <- mapply(function (i) root.i[i] * d.root[,i] / (sum(d.root[,i])), 1:ntypes)
     } else if ( root == ROOT.GIVEN ){
     	p <- mapply(function (i) root.i[i] * root.f(x), 1:ntypes)
     }    	
