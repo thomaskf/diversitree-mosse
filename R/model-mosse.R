@@ -100,15 +100,8 @@ initial.tip.mosse <- function(cache, control, x) {
   npad <- nx - length(x)
   n <- control$ntypes
   init <- function(type, mean, sd, n) {
-    xlen <- length(x)
-    if (xlen < 2) stop("x must have at least 2 points")
-    out <- rep(0, nx * (n + 1))
-    # extend x by one step so we have xlen+1 breakpoints -> xlen intervals
-    dx_last <- x[xlen] - x[xlen - 1]
-    x_ext <- c(x, x[xlen] + dx_last)
-    # probability for each [x[i], x[i+1]) interval
-    probs <- diff(pnorm(x_ext, mean, sd))  # length xlen
-    out[nx*type+1:nx] <- c(probs, rep(0, npad))    
+  	out <- rep(0, nx*(n+1))
+  	out[nx*type+1:nx] <- c(dnorm(x, mean, sd), rep(0, npad))
   	out
   }
   y <- mapply(init, cache$types, cache$states, cache$states.sd, n, SIMPLIFY=FALSE)
